@@ -1,0 +1,118 @@
+import { Link } from "react-router-dom";
+import { Sparkles, Mail, MapPin, Phone } from "lucide-react";
+
+const Footer = () => {
+  const currentYear = new Date().getFullYear();
+
+  return (
+    <footer className="bg-accent text-accent-foreground">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          {/* Brand */}
+          <div className="col-span-1">
+            <Link to="/" className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xl font-bold">Go-AI</span>
+            </Link>
+            <p className="text-sm text-accent-foreground/70">
+              Smartifying Life with AI-driven retail solutions.
+            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h3 className="text-sm font-semibold mb-4">Products</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/products#smartpos" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                  SmartPOS
+                </Link>
+              </li>
+              <li>
+                <Link to="/products#zensomart" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                  Zensomart Network
+                </Link>
+              </li>
+              <li>
+                <Link to="/products#smartsupply" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                  SmartSupply AI
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h3 className="text-sm font-semibold mb-4">Company</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/about" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/news" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                  News
+                </Link>
+              </li>
+              <li>
+                <Link to="/insights" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                  Market Insights
+                </Link>
+              </li>
+              <li>
+                <Link to="/careers" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                  Careers
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h3 className="text-sm font-semibold mb-4">Contact</h3>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2 text-sm text-accent-foreground/70">
+                <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <a href="mailto:info@goai.in" className="hover:text-accent-foreground transition-smooth">
+                  info@goai.in
+                </a>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-accent-foreground/70">
+                <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <a href="tel:+919876543210" className="hover:text-accent-foreground transition-smooth">
+                  +91 98765 43210
+                </a>
+              </li>
+              <li className="flex items-start gap-2 text-sm text-accent-foreground/70">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>Chennai, Tamil Nadu, India</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-accent-foreground/10">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-accent-foreground/70">
+              © {currentYear} Go-AI Pvt. Ltd. All rights reserved.
+            </p>
+            <div className="flex gap-6">
+              <Link to="/privacy" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                Privacy Policy
+              </Link>
+              <Link to="/terms" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;
