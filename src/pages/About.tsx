@@ -18,7 +18,7 @@ const About = () => {
           <h2 className="mb-6 text-center">Our Story</h2>
           <div className="prose prose-lg max-w-none text-foreground/80 space-y-4">
             <p>
-              Founded in 2023, Go-AI Pvt. Ltd. is an R&D and Sales Partner of Idaitics Ltd, UK. 
+              Founded in 2025, Go-AI Pvt. Ltd. is an R&D and Sales Partner of Idaitics Ltd, UK. 
               We were born from a simple observation: while large retail chains had access to 
               cutting-edge technology, millions of small neighborhood stores were being left 
               behind in the digital revolution.
