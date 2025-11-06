@@ -17,7 +17,10 @@ const Footer = () => {
               <span className="text-xl font-bold">Go-AI</span>
             </Link>
             <p className="text-sm text-accent-foreground/70">
-              Smartifying Life with AI-driven retail solutions.
+              Smartifying Life
+            </p>
+            <p className="text-xs text-accent-foreground/60 mt-2">
+              R&D and Sales Partner of Idaitics Ltd, UK
             </p>
           </div>
 
@@ -88,7 +91,7 @@ const Footer = () => {
               </li>
               <li className="flex items-start gap-2 text-sm text-accent-foreground/70">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>Chennai, Tamil Nadu, India</span>
+                <span>Tanjore, Tamil Nadu, India</span>
               </li>
             </ul>
           </div>

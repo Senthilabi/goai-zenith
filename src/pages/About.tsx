@@ -18,9 +18,10 @@ const About = () => {
           <h2 className="mb-6 text-center">Our Story</h2>
           <div className="prose prose-lg max-w-none text-foreground/80 space-y-4">
             <p>
-              Founded in 2023, Go-AI Pvt. Ltd. was born from a simple observation: 
-              while large retail chains had access to cutting-edge technology, millions of 
-              small neighborhood stores were being left behind in the digital revolution.
+              Founded in 2023, Go-AI Pvt. Ltd. is an R&D and Sales Partner of Idaitics Ltd, UK. 
+              We were born from a simple observation: while large retail chains had access to 
+              cutting-edge technology, millions of small neighborhood stores were being left 
+              behind in the digital revolution.
             </p>
             <p>
               We set out to change that. Our mission is to bring enterprise-grade AI and 
@@ -77,30 +78,48 @@ const About = () => {
           </Card>
         </div>
 
-        {/* Team Section */}
+        {/* Leadership Team */}
         <div className="bg-muted/30 rounded-2xl p-12">
           <div className="text-center mb-12">
             <Users className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h2 className="mb-4">Our Team</h2>
+            <h2 className="mb-4">Leadership Team</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              We're a passionate team of technologists, retail experts, and business builders 
-              dedicated to transforming India's retail landscape.
+              Our experienced leadership team brings together expertise in technology, retail, 
+              and business strategy to drive Go-AI's mission forward.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            <div className="bg-background rounded-xl p-6 shadow-elegant">
-              <h3 className="text-lg font-semibold mb-2">Technology Team</h3>
-              <p className="text-muted-foreground">
-                Expert engineers building scalable, AI-powered solutions with deep expertise 
-                in machine learning, mobile development, and cloud infrastructure.
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="bg-background rounded-xl p-8 shadow-elegant text-center">
+              <div className="w-20 h-20 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-white">IK</span>
+              </div>
+              <h3 className="text-lg font-semibold mb-1">Ms. Indumathi Kumaraguru</h3>
+              <p className="text-sm text-primary font-medium mb-2">Chairperson & Managing Director</p>
+              <p className="text-sm text-muted-foreground">
+                Leading Go-AI's strategic vision and growth initiatives across India.
               </p>
             </div>
-            <div className="bg-background rounded-xl p-6 shadow-elegant">
-              <h3 className="text-lg font-semibold mb-2">Business Team</h3>
-              <p className="text-muted-foreground">
-                Retail veterans and business strategists who understand the ground realities 
-                of small business operations in India.
+            
+            <div className="bg-background rounded-xl p-8 shadow-elegant text-center">
+              <div className="w-20 h-20 gradient-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-white">KK</span>
+              </div>
+              <h3 className="text-lg font-semibold mb-1">Ms. Karpagam Karthick</h3>
+              <p className="text-sm text-primary font-medium mb-2">Director</p>
+              <p className="text-sm text-muted-foreground">
+                Driving operational excellence and business development strategies.
+              </p>
+            </div>
+            
+            <div className="bg-background rounded-xl p-8 shadow-elegant text-center">
+              <div className="w-20 h-20 gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-white">KS</span>
+              </div>
+              <h3 className="text-lg font-semibold mb-1">Mr. Karthick Swaminathan</h3>
+              <p className="text-sm text-primary font-medium mb-2">General Manager</p>
+              <p className="text-sm text-muted-foreground">
+                Managing day-to-day operations and ensuring customer success.
               </p>
             </div>
           </div>
