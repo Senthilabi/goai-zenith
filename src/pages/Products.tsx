@@ -25,23 +25,27 @@ const products = [
     ],
   },
   {
+  {
     id: "zensomart",
     icon: Network,
-    title: "Zensomart Retail Network",
-    tagline: "Your Digital Wholesale Marketplace",
-    description: "Connect directly with FMCG distributors and brands. Zensomart simplifies B2B ordering, credit management, and logistics for small retailers across Tamil Nadu.",
+    title: "Zensomart",
+    tagline: "Intelligent Business Management",
+    description: "An efficient, data-driven daily management service for small and individual shop owners. Zensomart automates your day-to-day operations—from AI-powered sales insights and staff scheduling to digital catalogs—empowering you to run your business professionally and efficiently.",
     features: [
-      "Direct ordering from 500+ FMCG brands",
-      "Flexible credit terms and payment options",
-      "Real-time order tracking",
-      "Bulk discount management",
-      "Automated inventory replenishment",
-      "Dedicated relationship manager",
+      "AI-powered sales insights & stock alerts",
+      "Digital catalog for WhatsApp & online orders",
+      "Automated customer loyalty & offers",
+      "Staff scheduling & performance tracking",
+      "Real-time dashboards for owner decision-making",
+      "Powered by Go-AI branding for every store",
+      "Collective buying power & shared promotions",
     ],
     benefits: [
-      "Save 15% on wholesale costs",
-      "Get credit lines up to ₹5 lakhs",
-      "Next-day delivery guaranteed",
+      "Save time with fast billing & easy stock management",
+      "Increase sales through smart product mix suggestions",
+      "Reduce losses with expiry & low-stock alerts",
+      "Attract customers with digital presence",
+      "Run the shop efficiently even with minimal staff",
     ],
   },
   {
@@ -74,7 +78,7 @@ const Products = () => {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h1 className="mb-4">Our Products</h1>
           <p className="text-xl text-muted-foreground">
-            Comprehensive retail technology suite designed to empower small businesses 
+            Comprehensive retail technology suite designed to empower small businesses
             with enterprise-grade AI capabilities.
           </p>
         </div>

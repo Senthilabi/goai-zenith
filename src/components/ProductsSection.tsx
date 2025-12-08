@@ -15,9 +15,9 @@ const products = [
   {
     id: "zensomart",
     icon: Network,
-    title: "Zensomart Retail Network",
-    description: "B2B marketplace connecting retailers with FMCG distributors. Simplifying wholesale ordering with digital infrastructure.",
-    features: ["Wholesale Ordering", "Credit Management", "Order Tracking", "Analytics Dashboard"],
+    title: "Zensomart",
+    description: "Intelligent Business Management service for small shop owners. Automate daily operations with AI insights.",
+    features: ["AI Sales Insights", "Staff Management", "Digital Catalogs", "Loyalty Automation"],
     gradient: "gradient-secondary",
   },
   {
@@ -38,7 +38,7 @@ const ProductsSection = () => {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="mb-4">Our Products</h2>
           <p className="text-lg text-muted-foreground">
-            Comprehensive AI-powered solutions designed to transform retail operations 
+            Comprehensive AI-powered solutions designed to transform retail operations
             and empower small businesses across India.
           </p>
         </div>
