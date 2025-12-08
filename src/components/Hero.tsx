@@ -7,7 +7,7 @@ const Hero = () => {
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background Gradient */}
       <div className="absolute inset-0 gradient-hero opacity-5" />
-      
+
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           {/* Badge */}
@@ -19,14 +19,14 @@ const Hero = () => {
           {/* Headline */}
           <h1 className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
             Empowering Small Businesses with{" "}
-            <span className="gradient-primary bg-clip-text text-transparent">
+            <span className="text-primary">
               AI-Driven Solutions
             </span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-5 duration-700 delay-200">
-            Go-AI brings enterprise-grade retail technology to neighborhood stores across India, 
+            Go-AI brings enterprise-grade retail technology to neighborhood stores across India,
             making smart retail accessible for everyone.
           </p>
 
