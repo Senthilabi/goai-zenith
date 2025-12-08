@@ -25,7 +25,7 @@ const products = [
     ],
   },
   {
-  {
+
     id: "zensomart",
     icon: Network,
     title: "Zensomart",
