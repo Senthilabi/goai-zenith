@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Sparkles, Brain, Zap, Rocket } from "lucide-react";
 
 const Hero = () => {
   return (
@@ -45,19 +45,19 @@ const Hero = () => {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 animate-in fade-in slide-in-from-bottom-7 duration-700 delay-500">
             <div className="p-6 rounded-xl bg-card shadow-elegant hover:shadow-hover transition-smooth">
-              <TrendingUp className="w-8 h-8 text-primary mx-auto mb-3" />
-              <div className="text-3xl font-bold mb-1">500+</div>
-              <div className="text-sm text-muted-foreground">Retail Partners</div>
+              <Brain className="w-8 h-8 text-primary mx-auto mb-3" />
+              <div className="text-xl font-bold mb-1">AI-First</div>
+              <div className="text-sm text-muted-foreground">Smart Decision Making</div>
             </div>
             <div className="p-6 rounded-xl bg-card shadow-elegant hover:shadow-hover transition-smooth">
-              <Users className="w-8 h-8 text-secondary mx-auto mb-3" />
-              <div className="text-3xl font-bold mb-1">50K+</div>
-              <div className="text-sm text-muted-foreground">Daily Transactions</div>
+              <Zap className="w-8 h-8 text-secondary mx-auto mb-3" />
+              <div className="text-xl font-bold mb-1">Hyper-Local</div>
+              <div className="text-sm text-muted-foreground">Built for Indian Retail</div>
             </div>
             <div className="p-6 rounded-xl bg-card shadow-elegant hover:shadow-hover transition-smooth">
-              <Sparkles className="w-8 h-8 text-accent mx-auto mb-3" />
-              <div className="text-3xl font-bold mb-1">98%</div>
-              <div className="text-sm text-muted-foreground">Satisfaction Rate</div>
+              <Rocket className="w-8 h-8 text-accent mx-auto mb-3" />
+              <div className="text-xl font-bold mb-1">Future-Ready</div>
+              <div className="text-sm text-muted-foreground">Scalable Tech Stack</div>
             </div>
           </div>
         </div>
