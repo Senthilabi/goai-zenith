@@ -24,8 +24,8 @@ const products = [
     id: "smartsupply",
     icon: Zap,
     title: "SmartSupply AI",
-    description: "Intelligent supply chain optimization for retailers. Predict demand, optimize stock levels, and reduce waste.",
-    features: ["Demand Prediction", "Auto-Reordering", "Waste Reduction", "Cost Optimization"],
+    description: "Intelligent supply chain optimization & B2B marketplace. AI forecasting meets direct wholesale ordering.",
+    features: ["Demand Prediction", "Direct Ordering", "Credit Lines", "Auto-Reordering"],
     gradient: "gradient-hero",
   },
 ];
