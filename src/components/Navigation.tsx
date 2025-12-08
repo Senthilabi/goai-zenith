@@ -27,51 +27,51 @@ const Navigation = () => {
   }];
   const isActive = (path: string) => location.pathname === path;
   return <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-md border-b border-border z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center transition-smooth group-hover:shadow-hover">
-              <Sparkles className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">GoAi Technologies Pvt Ltd<span className="text-primary"></span>
-            </span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map(link => <Link key={link.path} to={link.path} className={cn("text-sm font-medium transition-smooth hover:text-primary", isActive(link.path) ? "text-primary" : "text-foreground/70")}>
-                {link.name}
-              </Link>)}
+    <div className="container mx-auto px-4">
+      <div className="flex items-center justify-between h-16">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-10 h-10 flex items-center justify-center transition-smooth group-hover:scale-105">
+            <img src="/logo.png" alt="Go-AI Logo" className="w-full h-full object-contain" />
           </div>
+          <span className="text-xl font-bold">GoAi Technologies Pvt Ltd<span className="text-primary"></span>
+          </span>
+        </Link>
 
-          {/* CTA Button */}
-          <div className="hidden md:block">
-            <Button asChild variant="hero">
-              <Link to="/contact">Get Started</Link>
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map(link => <Link key={link.path} to={link.path} className={cn("text-sm font-medium transition-smooth hover:text-primary", isActive(link.path) ? "text-primary" : "text-foreground/70")}>
+            {link.name}
+          </Link>)}
         </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && <div className="md:hidden py-4 border-t border-border">
-            <div className="flex flex-col gap-4">
-              {navLinks.map(link => <Link key={link.path} to={link.path} onClick={() => setMobileMenuOpen(false)} className={cn("text-sm font-medium transition-smooth hover:text-primary py-2", isActive(link.path) ? "text-primary" : "text-foreground/70")}>
-                  {link.name}
-                </Link>)}
-              <Button asChild variant="hero" className="w-full">
-                <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>
-                  Get Started
-                </Link>
-              </Button>
-            </div>
-          </div>}
+        {/* CTA Button */}
+        <div className="hidden md:block">
+          <Button asChild variant="hero">
+            <Link to="/contact">Get Started</Link>
+          </Button>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
-    </nav>;
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && <div className="md:hidden py-4 border-t border-border">
+        <div className="flex flex-col gap-4">
+          {navLinks.map(link => <Link key={link.path} to={link.path} onClick={() => setMobileMenuOpen(false)} className={cn("text-sm font-medium transition-smooth hover:text-primary py-2", isActive(link.path) ? "text-primary" : "text-foreground/70")}>
+            {link.name}
+          </Link>)}
+          <Button asChild variant="hero" className="w-full">
+            <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>
+              Get Started
+            </Link>
+          </Button>
+        </div>
+      </div>}
+    </div>
+  </nav>;
 };
 export default Navigation;

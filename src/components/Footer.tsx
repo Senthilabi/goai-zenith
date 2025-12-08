@@ -11,8 +11,8 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img src="/logo.png" alt="Go-AI Logo" className="w-full h-full object-contain" />
               </div>
               <span className="text-xl font-bold">Go-AI</span>
             </Link>
