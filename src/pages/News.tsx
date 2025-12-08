@@ -5,33 +5,9 @@ import { Calendar } from "lucide-react";
 const newsItems = [
   {
     id: 1,
-    date: "November 2025",
-    title: "Zensomart Retail Network Launch",
-    content: "GoAi Technologies Pvt Ltd launches Zensomart Retail Network in Tamil Nadu, connecting local retailers with digital infrastructure and enabling seamless B2B ordering. The network now serves over 500 retailers across the state.",
-  },
-  {
-    id: 2,
-    date: "October 2025",
-    title: "SmartPOS v2 Release",
-    content: "SmartPOS v2 introduces AI-based stock alerts and enhanced inventory management capabilities for small retailers. The new version features predictive analytics and automated reordering suggestions.",
-  },
-  {
-    id: 3,
-    date: "September 2025",
-    title: "Partnership with Leading FMCG Brand",
-    content: "GoAi Technologies Pvt Ltd partners with major FMCG distributors to expand Zensomart's reach across Tamil Nadu. This partnership brings over 200 new brands to our platform, offering retailers unprecedented choice and competitive pricing.",
-  },
-  {
-    id: 4,
-    date: "August 2025",
-    title: "AI Innovation Award",
-    content: "GoAi Technologies Pvt Ltd receives recognition for innovative AI applications in retail technology at the Tamil Nadu Startup Awards 2025. Our SmartSupply AI solution was highlighted for its impact on reducing inventory waste.",
-  },
-  {
-    id: 5,
-    date: "July 2025",
-    title: "500+ Retailers Milestone",
-    content: "GoAi Technologies Pvt Ltd celebrates serving over 500 retail partners across Tamil Nadu, processing more than 50,000 daily transactions. This milestone reinforces our commitment to empowering small businesses with technology.",
+    date: "December 3, 2025",
+    title: "Strategic MOU Signed with Idaitics Ltd, UK",
+    content: "GoAi Technologies Pvt Ltd has officially signed a Memorandum of Understanding (MOU) with Idaitics Ltd, UK. This strategic partnership focuses on deep collaboration in technology and market expansion, bringing world-class AI retail solutions to the Indian market.",
   },
 ];
 
