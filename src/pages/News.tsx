@@ -48,7 +48,7 @@ const News = () => {
             Subscribe to our newsletter for the latest updates and market insights.
           </p>
           <a
-            href="mailto:info@goai.in?subject=Newsletter Subscription"
+            href="mailto:hello@go-aitech.com?subject=Newsletter Subscription"
             className="text-primary hover:underline font-medium"
           >
             Subscribe Now →

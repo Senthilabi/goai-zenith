@@ -87,7 +87,7 @@ const Insights = () => {
             and actionable insights for your business.
           </p>
           <Button asChild variant="secondary" size="lg">
-            <a href="mailto:info@goai.in?subject=Newsletter Subscription">
+            <a href="mailto:hello@go-aitech.com?subject=Newsletter Subscription">
               Subscribe to Newsletter <ArrowRight className="ml-2 w-5 h-5" />
             </a>
           </Button>

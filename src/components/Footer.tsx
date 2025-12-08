@@ -14,7 +14,7 @@ const Footer = () => {
               <div className="w-10 h-10 flex items-center justify-center">
                 <img src="/logo.png" alt="Go-AI Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="text-xl font-bold">GoAi Technologies Pvt Ltd</span>
+              <span className="text-xl font-bold text-british-blue">GoAi Technologies Pvt Ltd</span>
             </Link>
             <p className="text-sm text-accent-foreground/70">
               Smartifying Life
@@ -79,8 +79,8 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-2 text-sm text-accent-foreground/70">
                 <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <a href="mailto:info@goai.in" className="hover:text-accent-foreground transition-smooth">
-                  info@goai.in
+                <a href="mailto:hello@go-aitech.com" className="hover:text-accent-foreground transition-smooth">
+                  hello@go-aitech.com
                 </a>
               </li>
               <li className="flex items-start gap-2 text-sm text-accent-foreground/70">
