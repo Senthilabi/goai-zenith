@@ -6,24 +6,27 @@ import { Calendar, ArrowRight } from "lucide-react";
 const insights = [
   {
     id: 1,
-    date: "November 15, 2025",
-    title: "AI Transforming Retail: November 2025 Insights",
-    excerpt: "The retail landscape is experiencing unprecedented transformation through artificial intelligence. Small retailers adopting AI see 40% improvement in inventory management.",
-    topics: ["Hyperlocal AI Solutions", "WhatsApp Commerce Growth", "Inventory Optimization"],
+    date: "December 6, 2025",
+    title: "Global AI in Retail Market to Reach $14.03 Billion by 2025",
+    excerpt: "The international retail sector is witnessing explosive growth in AI adoption. Driven by hyper-personalization and automated inventory management, the global market is projected to surge, with major players like Walmart and Amazon leading the charge in AI-first commerce.",
+    topics: ["Global Market Growth", "Hyper-Personalization", "Inventory Automation"],
+    url: "https://www.precedenceresearch.com/artificial-intelligence-in-retail-market",
   },
   {
     id: 2,
-    date: "October 20, 2025",
-    title: "The Rise of Digital B2B Marketplaces in India",
-    excerpt: "B2B digital marketplaces are revolutionizing wholesale trade in India. Retailers using digital ordering platforms report 15% cost savings and better credit terms.",
-    topics: ["B2B Digital Transformation", "Credit Management", "Supply Chain Efficiency"],
+    date: "November 24, 2025",
+    title: "India's Kirana Stores: The New Frontier for AI Adoption",
+    excerpt: "Over 80% of Indian retailers are expected to adopt AI by 2025. From dynamic pricing to predictive stock alerts, technology is transforming traditional Kirana stores into 'Intelligent Retail' hubs, leveling the playing field against quick-commerce giants.",
+    topics: ["Kirana Digitization", "Dynamic Pricing", "Predictive Analytics"],
+    url: "https://www.financialexpress.com/business/industry/kirana-stores-adopting-technology-to-compete-with-q-commerce-players/3313214/",
   },
   {
     id: 3,
-    date: "September 10, 2025",
-    title: "Small Retailers in the Digital Age",
-    excerpt: "Neighborhood stores are embracing technology at an accelerating pace. Over 60% of small retailers now use digital tools for inventory and billing.",
-    topics: ["Digital Adoption Trends", "POS Systems", "Mobile-First Solutions"],
+    date: "October 15, 2025",
+    title: "Tamil Nadu Launches AI Mission to Boost Retail Tech",
+    excerpt: "The Tamil Nadu government has rolled out the 'Tamil Nadu Artificial Intelligence Mission' (TNAIM) to integrating AI across sectors. With focus on coding in schools and AI labs for startups, the state is positioning itself as a hub for retail-tech innovation.",
+    topics: ["TNAIM Initiative", "Regional Innovation", "Startup Ecosystem"],
+    url: "https://www.thehindu.com/news/national/tamil-nadu/tn-budget-2024-artificial-intelligence-mission-to-be-integrated-in-schools/article67866336.ece",
   },
 ];
 
@@ -65,9 +68,11 @@ const Insights = () => {
                     ))}
                   </div>
                 </div>
-                <Button variant="ghost" className="w-full group">
-                  Read Full Article
-                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-smooth" />
+                <Button asChild variant="ghost" className="w-full group">
+                  <a href={insight.url} target="_blank" rel="noopener noreferrer">
+                    Read Full Article
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-smooth" />
+                  </a>
                 </Button>
               </CardContent>
             </Card>
@@ -78,7 +83,7 @@ const Insights = () => {
         <div className="bg-gradient-hero text-accent-foreground rounded-2xl p-12 max-w-4xl mx-auto text-center">
           <h2 className="mb-4 text-white">Get Monthly Insights Delivered</h2>
           <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
-            Subscribe to our monthly newsletter for in-depth market analysis, retail trends, 
+            Subscribe to our monthly newsletter for in-depth market analysis, retail trends,
             and actionable insights for your business.
           </p>
           <Button asChild variant="secondary" size="lg">
