@@ -50,7 +50,7 @@ const Contact = () => {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h1 className="mb-4">Get in Touch</h1>
           <p className="text-xl text-muted-foreground">
-            Ready to transform your retail business? Let's talk about how Go-AI can help.
+            Ready to transform your retail business? Let's talk about how GoAi Technologies Pvt Ltd can help.
           </p>
         </div>
 
@@ -133,7 +133,7 @@ const Contact = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_ACCESS_KEY" />
-                <input type="hidden" name="subject" value="New Contact Form Submission from Go-AI Website" />
+                <input type="hidden" name="subject" value="New Contact Form Submission from GoAi Technologies Pvt Ltd Website" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">

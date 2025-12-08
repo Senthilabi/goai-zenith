@@ -14,7 +14,7 @@ const Footer = () => {
               <div className="w-10 h-10 flex items-center justify-center">
                 <img src="/logo.png" alt="Go-AI Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="text-xl font-bold">Go-AI</span>
+              <span className="text-xl font-bold">GoAi Technologies Pvt Ltd</span>
             </Link>
             <p className="text-sm text-accent-foreground/70">
               Smartifying Life
@@ -101,7 +101,7 @@ const Footer = () => {
         <div className="pt-8 border-t border-accent-foreground/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-accent-foreground/70">
-              © {currentYear} Go-AI Pvt. Ltd. All rights reserved.
+              © {currentYear} GoAi Technologies Pvt Ltd. All rights reserved.
             </p>
             <div className="flex gap-6">
               <Link to="/privacy" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">

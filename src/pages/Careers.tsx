@@ -51,7 +51,7 @@ const Careers = () => {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h1 className="mb-4">Join Our Team</h1>
           <p className="text-xl text-muted-foreground">
-            Be part of the mission to transform retail across India. We're looking for passionate 
+            Be part of the mission to transform retail across India. We're looking for passionate
             individuals who want to make a real impact.
           </p>
         </div>
@@ -119,7 +119,7 @@ const Careers = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_ACCESS_KEY" />
-                <input type="hidden" name="subject" value="New Internship Application from Go-AI Website" />
+                <input type="hidden" name="subject" value="New Internship Application from GoAi Technologies Pvt Ltd Website" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">

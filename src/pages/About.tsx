@@ -7,7 +7,7 @@ const About = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h1 className="mb-4">About Go-AI</h1>
+          <h1 className="mb-4">About GoAi Technologies Pvt Ltd</h1>
           <p className="text-xl text-muted-foreground">
             Empowering small businesses across India with AI-driven retail technology.
           </p>
@@ -18,19 +18,19 @@ const About = () => {
           <h2 className="mb-6 text-center">Our Story</h2>
           <div className="prose prose-lg max-w-none text-foreground/80 space-y-4">
             <p>
-              Founded in 2025, Go-AI Pvt. Ltd. is an R&D and Sales Partner of Idaitics Ltd, UK. 
-              We were born from a simple observation: while large retail chains had access to 
-              cutting-edge technology, millions of small neighborhood stores were being left 
+              Founded in 2025, GoAi Technologies Pvt Ltd. is an R&D and Sales Partner of Idaitics Ltd, UK.
+              We were born from a simple observation: while large retail chains had access to
+              cutting-edge technology, millions of small neighborhood stores were being left
               behind in the digital revolution.
             </p>
             <p>
-              We set out to change that. Our mission is to bring enterprise-grade AI and 
-              retail technology to every small business in India, regardless of their size 
+              We set out to change that. Our mission is to bring enterprise-grade AI and
+              retail technology to every small business in India, regardless of their size
               or technical expertise.
             </p>
             <p>
-              Today, we're proud to serve over 500 retail partners across Tamil Nadu, 
-              processing more than 50,000 transactions daily and helping small businesses 
+              Today, we're proud to serve over 500 retail partners across Tamil Nadu,
+              processing more than 50,000 transactions daily and helping small businesses
               compete effectively in the modern retail landscape.
             </p>
           </div>
@@ -45,7 +45,7 @@ const About = () => {
               </div>
               <h3 className="mb-4">Our Mission</h3>
               <p className="text-muted-foreground">
-                To democratize retail technology and make AI-powered solutions accessible 
+                To democratize retail technology and make AI-powered solutions accessible
                 to every small business in India.
               </p>
             </CardContent>
@@ -58,7 +58,7 @@ const About = () => {
               </div>
               <h3 className="mb-4">Our Vision</h3>
               <p className="text-muted-foreground">
-                A future where every neighborhood store has the tools and technology to 
+                A future where every neighborhood store has the tools and technology to
                 thrive in the digital economy.
               </p>
             </CardContent>
@@ -71,7 +71,7 @@ const About = () => {
               </div>
               <h3 className="mb-4">Our Values</h3>
               <p className="text-muted-foreground">
-                Simplicity, accessibility, and unwavering commitment to small business success 
+                Simplicity, accessibility, and unwavering commitment to small business success
                 guide everything we do.
               </p>
             </CardContent>
@@ -84,8 +84,8 @@ const About = () => {
             <Users className="w-12 h-12 text-primary mx-auto mb-4" />
             <h2 className="mb-4">Leadership Team</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our experienced leadership team brings together expertise in technology, retail, 
-              and business strategy to drive Go-AI's mission forward.
+              Our experienced leadership team brings together expertise in technology, retail,
+              and business strategy to drive GoAi Technologies Pvt Ltd's mission forward.
             </p>
           </div>
 
@@ -100,7 +100,7 @@ const About = () => {
                 Leading Go-AI's strategic vision and growth initiatives across India.
               </p>
             </div>
-            
+
             <div className="bg-background rounded-xl p-8 shadow-elegant text-center">
               <div className="w-20 h-20 gradient-secondary rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-white">KK</span>
@@ -111,7 +111,7 @@ const About = () => {
                 Driving operational excellence and business development strategies.
               </p>
             </div>
-            
+
             <div className="bg-background rounded-xl p-8 shadow-elegant text-center">
               <div className="w-20 h-20 gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-white">KS</span>

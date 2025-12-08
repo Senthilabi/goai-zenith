@@ -26,7 +26,7 @@ const Hero = () => {
 
           {/* Subheadline */}
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-5 duration-700 delay-200">
-            Go-AI brings enterprise-grade retail technology to neighborhood stores across India,
+            GoAi Technologies Pvt Ltd brings enterprise-grade retail technology to neighborhood stores across India,
             making smart retail accessible for everyone.
           </p>
 

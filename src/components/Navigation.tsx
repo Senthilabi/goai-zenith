@@ -32,7 +32,7 @@ const Navigation = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
           <div className="w-10 h-10 flex items-center justify-center transition-smooth group-hover:scale-105">
-            <img src="/logo.png" alt="Go-AI Logo" className="w-full h-full object-contain" />
+            <img src="/logo.png" alt="GoAi Technologies Pvt Ltd Logo" className="w-full h-full object-contain" />
           </div>
           <span className="text-xl font-bold">GoAi Technologies Pvt Ltd<span className="text-primary"></span>
           </span>
