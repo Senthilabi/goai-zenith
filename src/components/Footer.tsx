@@ -70,6 +70,11 @@ const Footer = () => {
                   Careers
                 </Link>
               </li>
+              <li>
+                <Link to="/employee-login" className="text-sm text-accent-foreground/70 hover:text-accent-foreground transition-smooth">
+                  Employee Portal
+                </Link>
+              </li>
             </ul>
           </div>
 
