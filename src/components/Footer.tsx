@@ -91,7 +91,14 @@ const Footer = () => {
               </li>
               <li className="flex items-start gap-2 text-sm text-accent-foreground/70">
                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>Tanjore, Tamil Nadu, India</span>
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Periyar+TBI+PMIST+Vallam+Thanjavur"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-accent-foreground transition-smooth text-left"
+                >
+                  207, Periyar TBI, PMIST, Vallam, Thanjavur 613403
+                </a>
               </li>
             </ul>
           </div>

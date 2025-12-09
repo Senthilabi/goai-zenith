@@ -15,6 +15,8 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import EmployeeLogin from "./pages/EmployeeLogin";
+import Portal from "./pages/Portal";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,11 @@ const App = () => (
 
                 {/* Employee Portal Routes */}
                 <Route path="/employee-login" element={<EmployeeLogin />} />
+                <Route path="/portal" element={
+                  <ProtectedRoute>
+                    <Portal />
+                  </ProtectedRoute>
+                } />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
