@@ -78,8 +78,8 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">Phone</h3>
-                      <a href="tel:+919876543210" className="text-muted-foreground hover:text-primary transition-smooth">
-                        +91 98765 43210
+                      <a href="tel:+919841485404" className="text-muted-foreground hover:text-primary transition-smooth">
+                        +91 98414 85404
                       </a>
                     </div>
                   </div>
@@ -155,7 +155,7 @@ const Contact = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" />
+                    <Input id="phone" name="phone" type="tel" placeholder="+91 98414 85404" />
                   </div>
 
                   <div className="space-y-2">
