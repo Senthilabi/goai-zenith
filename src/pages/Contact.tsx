@@ -97,6 +97,7 @@ const Contact = () => {
                         className="text-muted-foreground hover:text-primary transition-smooth"
                       >
                         207, Periyar TBI, PMIST,<br />Vallam, Thanjavur 613403
+                      </a>
                     </div>
                   </div>
                 </div>
