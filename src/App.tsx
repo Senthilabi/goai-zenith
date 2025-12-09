@@ -17,6 +17,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import EmployeeLogin from "./pages/EmployeeLogin";
 import Portal from "./pages/Portal";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,13 @@ const App = () => (
                   <ProtectedRoute>
                     <Portal />
                   </ProtectedRoute>
+                } />
+
+                {/* Admin Routes */}
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
                 } />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

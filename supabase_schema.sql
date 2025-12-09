@@ -66,6 +66,42 @@ create policy "Users can insert own leaves"
   on public.leave_requests for insert with check (auth.uid() = user_id);
 
 
+/* 5. ADMIN POLICIES (Add these to allow Admins to manage everything) */
+
+/* Profiles */
+create policy "Admins can view all profiles"
+  on public.profiles for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+create policy "Admins can update all profiles"
+  on public.profiles for update using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+create policy "Admins can delete profiles"
+  on public.profiles for delete using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+/* Attendance */
+create policy "Admins can view all attendance"
+  on public.attendance for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+/* Leave Requests */
+create policy "Admins can view all leave requests"
+  on public.leave_requests for select using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+create policy "Admins can update leave requests (Approve/Reject)"
+  on public.leave_requests for update using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  );
+
+
 /* 4. TRIGGER FOR NEW USERS */
 create or replace function public.handle_new_user()
 returns trigger as $$
