@@ -82,106 +82,93 @@ const Contact = () => {
                         +91 98765 43210
                       </a>
                     </div>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 gradient-hero rounded-lg flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="font-semibold mb-1">Office</h3>
-                    <a
-                      href="https://www.google.com/maps/search/?api=1&query=Periyar+TBI+PMIST+Vallam+Thanjavur"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-primary transition-smooth"
-                    >
-                      207, Periyar TBI, PMIST,<br />Vallam, Thanjavur 613403
-                    </a>
-                  </div>
+                    207, Periyar TBI, PMIST,<br />Vallam, Thanjavur 613403
+                  </a>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-          <Card className="shadow-elegant bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-lg">Business Hours</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Monday - Friday</span>
-                  <span className="font-medium">9:00 AM - 6:00 PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Saturday</span>
-                  <span className="font-medium">10:00 AM - 4:00 PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sunday</span>
-                  <span className="font-medium">Closed</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <Card className="shadow-elegant bg-muted/30">
+        <CardHeader>
+          <CardTitle className="text-lg">Business Hours</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Monday - Friday</span>
+              <span className="font-medium">9:00 AM - 6:00 PM</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Saturday</span>
+              <span className="font-medium">10:00 AM - 4:00 PM</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Sunday</span>
+              <span className="font-medium">Closed</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+        {/* Contact Form */ }
+  <Card className="lg:col-span-2 shadow-elegant">
+    <CardHeader>
+      <CardTitle>Send us a message</CardTitle>
+      <CardDescription>
+        Fill out the form below and we'll get back to you as soon as possible.
+      </CardDescription>
+    </CardHeader>
+    <CardContent>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_ACCESS_KEY" />
+        <input type="hidden" name="subject" value="New Contact Form Submission from GoAi Technologies Pvt Ltd Website" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name *</Label>
+            <Input id="name" name="name" required placeholder="John Doe" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email *</Label>
+            <Input id="email" name="email" type="email" required placeholder="john@example.com" />
+          </div>
         </div>
 
-        {/* Contact Form */}
-        <Card className="lg:col-span-2 shadow-elegant">
-          <CardHeader>
-            <CardTitle>Send us a message</CardTitle>
-            <CardDescription>
-              Fill out the form below and we'll get back to you as soon as possible.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_ACCESS_KEY" />
-              <input type="hidden" name="subject" value="New Contact Form Submission from GoAi Technologies Pvt Ltd Website" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" />
+          </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input id="name" name="name" required placeholder="John Doe" />
-                </div>
+          <div className="space-y-2">
+            <Label htmlFor="business">Business Name</Label>
+            <Input id="business" name="business" placeholder="Your Business Name" />
+          </div>
+        </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input id="email" name="email" type="email" required placeholder="john@example.com" />
-                </div>
-              </div>
+        <div className="space-y-2">
+          <Label htmlFor="message">Message *</Label>
+          <Textarea
+            id="message"
+            name="message"
+            required
+            placeholder="Tell us about your requirements..."
+            rows={6}
+          />
+        </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="business">Business Name</Label>
-                  <Input id="business" name="business" placeholder="Your Business Name" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">Message *</Label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  required
-                  placeholder="Tell us about your requirements..."
-                  rows={6}
-                />
-              </div>
-
-              <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Sending..." : "Send Message"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Sending..." : "Send Message"}
+        </Button>
+      </form>
+    </CardContent>
+  </Card>
+      </div >
+    </div >
     </main >
   );
 };
