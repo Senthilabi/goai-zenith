@@ -7,7 +7,7 @@ const About = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h1 className="mb-4">About GoAi Technologies Pvt Ltd</h1>
+          <h1 className="mb-4"> GoAi Technologies </h1>
           <p className="text-xl text-muted-foreground">
             Empowering small businesses across India with AI-driven retail technology.
           </p>
@@ -97,7 +97,8 @@ const About = () => {
               <h3 className="text-lg font-semibold mb-1">Ms. Indumathi Kumaraguru</h3>
               <p className="text-sm text-primary font-medium mb-2">Chairperson & Managing Director</p>
               <p className="text-sm text-muted-foreground">
-                Leading Go-AI's strategic vision and growth initiatives across India.
+                “Leading Go-AI’s strategic vision and growth across India, she is an entrepreneur
+                driven by a mission to empower youth by creating early-stage opportunities for their success.”
               </p>
             </div>
 
@@ -105,22 +106,20 @@ const About = () => {
               <div className="w-20 h-20 gradient-secondary rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-white">KK</span>
               </div>
-              <h3 className="text-lg font-semibold mb-1">Ms. Karpagam Karthick</h3>
+              <h3 className="text-lg font-semibold mb-1">Ms. Karpagam Karthk</h3>
               <p className="text-sm text-primary font-medium mb-2">Director</p>
               <p className="text-sm text-muted-foreground">
-                Driving operational excellence and business development strategies.
-              </p>
+                "Leads operations and Client Management. With deep experience in education and management, she excels in mentoring youth and preparing them for today’s industry needs.”              </p>
             </div>
 
             <div className="bg-background rounded-xl p-8 shadow-elegant text-center">
               <div className="w-20 h-20 gradient-hero rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-white">KS</span>
               </div>
-              <h3 className="text-lg font-semibold mb-1">Mr. Karthick Swaminathan</h3>
+              <h3 className="text-lg font-semibold mb-1">Mr. Karthik Swaminathan</h3>
               <p className="text-sm text-primary font-medium mb-2">General Manager</p>
               <p className="text-sm text-muted-foreground">
-                Managing day-to-day operations and ensuring customer success.
-              </p>
+                "Overseas Business Development   and Employee Management with strategic discipline and service excellence. With deep expertise in HR, workforce planning, and administration, he brings strong, steady, performance-driven leadership.”             </p>
             </div>
           </div>
         </div>
