@@ -38,8 +38,8 @@ const HRMSLayout = () => {
                 <div className="p-4 flex items-center justify-between border-b border-slate-700">
                     {isSidebarOpen && (
                         <div className="flex items-center gap-3">
-                            <img src="/logo.png" alt="GoAI Logo" className="w-8 h-8 object-contain" />
-                            <span className="font-bold text-xl tracking-wider">GoAI HRMS</span>
+                            <img src="/logo.png" alt="GoAi Logo" className="w-8 h-8 object-contain" />
+                            <span className="font-bold text-xl tracking-wider">GoAi HRMS</span>
                         </div>
                     )}
                     <Button
