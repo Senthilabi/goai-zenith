@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Users, Rocket, Heart, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 const Careers = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,26 +18,148 @@ const Careers = () => {
     setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget; // Store form reference
+
+    const applicationData = {
+      full_name: formData.get("full_name") as string,
+      email: formData.get("email") as string,
+      phone: formData.get("phone") as string,
+      position: formData.get("position") as string,
+      university: formData.get("university") as string,
+      graduation_year: formData.get("graduation_year") as string,
+      skills: formData.get("skills") as string,
+      motivation: formData.get("motivation") as string,
+      resume_link: formData.get("resume_link") as string,
+    };
 
     try {
-      const response = await fetch("https://api.web3forms.com/submit", {
+      console.log("=== Starting application submission ===");
+
+      // Get resume file
+      const resumeFile = formData.get("resume") as File;
+      if (!resumeFile || resumeFile.size === 0) {
+        throw new Error("Please upload your resume");
+      }
+
+      // Validate file size (5MB max)
+      if (resumeFile.size > 5 * 1024 * 1024) {
+        throw new Error("Resume file size must be less than 5MB");
+      }
+
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(resumeFile.type)) {
+        throw new Error("Please upload a PDF or Word document");
+      }
+
+      console.log("Uploading resume:", resumeFile.name);
+
+      // Upload resume to Supabase Storage
+      const fileExt = resumeFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('resumes')
+        .upload(filePath, resumeFile);
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw new Error(`Failed to upload resume: ${uploadError.message}`);
+      }
+
+      console.log("✅ Resume uploaded successfully:", filePath);
+
+      const applicationData = {
+        full_name: formData.get("full_name") as string,
+        email: formData.get("email") as string,
+        phone: formData.get("phone") as string,
+        position: formData.get("position") as string,
+        university: formData.get("university") as string,
+        graduation_year: formData.get("graduation_year") as string,
+        skills: formData.get("skills") as string || "",
+        motivation: formData.get("motivation") as string,
+        resume_link: filePath, // Store the file path
+      };
+
+      console.log("Application data:", applicationData);
+
+      // Save to database
+      console.log("Attempting to save to database...");
+      const { data: savedData, error: dbError } = await supabase
+        .from("internship_applications")
+        .insert([applicationData])
+        .select();
+
+      if (dbError) {
+        console.error("❌ Database error:", dbError);
+        throw new Error(`Database error: ${dbError.message}`);
+      }
+
+      console.log("✅ Saved to database successfully:", savedData);
+
+      // Send email notification
+      console.log("Sending email notification...");
+      const emailResponse = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_key: "eefdb10e-f591-4963-9a67-e45f0d8afda3",
+          subject: "New Internship Application - GoAi Technologies",
+          from_name: applicationData.full_name,
+          email: "Hello@go-aitech.com",
+          message: `
+New Internship Application Received
+
+Name: ${applicationData.full_name}
+Email: ${applicationData.email}
+Phone: ${applicationData.phone}
+Position: ${applicationData.position}
+University: ${applicationData.university}
+Graduation Year: ${applicationData.graduation_year}
+
+Skills & Experience:
+${applicationData.skills || 'Not provided'}
+
+Motivation:
+${applicationData.motivation}
+
+Resume: Uploaded (${filePath})
+Download from: Supabase Storage > resumes bucket
+
+View in HRMS: ${window.location.origin}/hrms/recruitment
+          `.trim()
+        })
       });
 
-      if (response.ok) {
-        toast({
-          title: "Application submitted!",
-          description: "We'll review your application and get back to you soon.",
-        });
-        e.currentTarget.reset();
+      const emailResult = await emailResponse.json();
+      console.log("Email response:", emailResult);
+
+      if (!emailResponse.ok) {
+        console.warn("⚠️ Email failed but continuing:", emailResult);
       } else {
-        throw new Error("Failed to submit application");
+        console.log("✅ Email sent successfully");
       }
-    } catch (error) {
+
+      toast({
+        title: "Application submitted!",
+        description: "We'll review your application and get back to you soon.",
+      });
+
+      form.reset(); // Use stored form reference
+      console.log("=== Application submission complete ===");
+    } catch (error: any) {
+      console.error("❌ ERROR submitting application:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+
       toast({
         title: "Error",
-        description: "Failed to submit application. Please try again.",
+        description: error.message || "Failed to submit application. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -118,9 +241,6 @@ const Careers = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_ACCESS_KEY" />
-                <input type="hidden" name="subject" value="New Internship Application from GoAi Technologies Pvt Ltd Website" />
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="full_name">Full Name *</Label>
@@ -180,7 +300,7 @@ const Careers = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="motivation">Why do you want to join Go-AI? *</Label>
+                  <Label htmlFor="motivation">Why do you want to join GoAi? *</Label>
                   <Textarea
                     id="motivation"
                     name="motivation"
@@ -191,8 +311,18 @@ const Careers = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="resume_link">Resume Link (Google Drive, Dropbox, etc.)</Label>
-                  <Input id="resume_link" name="resume_link" type="url" placeholder="https://..." />
+                  <Label htmlFor="resume">Resume/CV * (PDF, DOC, DOCX - Max 5MB)</Label>
+                  <input
+                    id="resume"
+                    name="resume"
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    required
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload your resume in PDF or Word format
+                  </p>
                 </div>
 
                 <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
@@ -207,8 +337,8 @@ const Careers = () => {
         <div className="mt-12 text-center max-w-2xl mx-auto">
           <p className="text-muted-foreground">
             For full-time positions or other inquiries, please email us at{" "}
-            <a href="mailto:careers@goai.in" className="text-primary hover:underline">
-              careers@goai.in
+            <a href="mailto:Hello@go-aitech.com" className="text-primary hover:underline">
+              Hello@go-aitech.com
             </a>
           </p>
         </div>
