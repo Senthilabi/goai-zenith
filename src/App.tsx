@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -19,6 +19,14 @@ import Portal from "./pages/Portal";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AdminRoute } from "./components/AdminRoute";
+
+// HRMS Imports
+import HRMSLayout from "./hrms/layout/HRMSLayout";
+import HRMSDashboard from "./hrms/pages/Dashboard";
+import EmployeeList from "./hrms/pages/EmployeeList";
+import AttendanceView from "./hrms/pages/AttendanceView";
+import LeaveManager from "./hrms/pages/LeaveManager";
+import Recruitment from "./hrms/pages/Recruitment";
 
 const queryClient = new QueryClient();
 
@@ -43,11 +51,8 @@ const App = () => (
 
                 {/* Employee Portal Routes */}
                 <Route path="/employee-login" element={<EmployeeLogin />} />
-                <Route path="/portal" element={
-                  <ProtectedRoute>
-                    <Portal />
-                  </ProtectedRoute>
-                } />
+                {/* Redirect old portal to new HRMS */}
+                <Route path="/portal" element={<Navigate to="/hrms" replace />} />
 
                 {/* Admin Routes */}
                 <Route path="/admin" element={
@@ -57,6 +62,16 @@ const App = () => (
                 } />
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                {/* HRMS Routes - Completely Isolated */}
+                <Route path="/hrms" element={<HRMSLayout />}>
+                  <Route index element={<Navigate to="/hrms/dashboard" replace />} />
+                  <Route path="dashboard" element={<HRMSDashboard />} />
+                  <Route path="employees" element={<EmployeeList />} />
+                  <Route path="attendance" element={<AttendanceView />} />
+                  <Route path="leaves" element={<LeaveManager />} />
+                  <Route path="recruitment" element={<Recruitment />} />
+                </Route>
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>
