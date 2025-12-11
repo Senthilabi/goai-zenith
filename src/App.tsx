@@ -15,7 +15,6 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./contexts/AuthContext";
 import EmployeeLogin from "./pages/EmployeeLogin";
-import Portal from "./pages/Portal";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AdminRoute } from "./components/AdminRoute";
@@ -37,46 +36,50 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="flex flex-col min-h-screen">
-            <Navigation />
-            <div className="flex-1">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/news" element={<News />} />
-                <Route path="/insights" element={<Insights />} />
-                <Route path="/careers" element={<Careers />} />
-                <Route path="/contact" element={<Contact />} />
+          <Routes>
+            {/* HRMS Routes - Completely Isolated (No Navigation/Footer) */}
+            <Route path="/hrms" element={<HRMSLayout />}>
+              <Route index element={<Navigate to="/hrms/dashboard" replace />} />
+              <Route path="dashboard" element={<HRMSDashboard />} />
+              <Route path="employees" element={<EmployeeList />} />
+              <Route path="attendance" element={<AttendanceView />} />
+              <Route path="leaves" element={<LeaveManager />} />
+              <Route path="recruitment" element={<Recruitment />} />
+            </Route>
 
-                {/* Employee Portal Routes */}
-                <Route path="/employee-login" element={<EmployeeLogin />} />
-                {/* Redirect old portal to new HRMS */}
-                <Route path="/portal" element={<Navigate to="/hrms" replace />} />
+            {/* Main Website Routes (With Navigation/Footer) */}
+            <Route path="*" element={
+              <div className="flex flex-col min-h-screen">
+                <Navigation />
+                <div className="flex-1">
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/products" element={<Products />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/news" element={<News />} />
+                    <Route path="/insights" element={<Insights />} />
+                    <Route path="/careers" element={<Careers />} />
+                    <Route path="/contact" element={<Contact />} />
 
-                {/* Admin Routes */}
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                } />
+                    {/* Employee Portal Routes */}
+                    <Route path="/employee-login" element={<EmployeeLogin />} />
+                    {/* Redirect old portal to new HRMS */}
+                    <Route path="/portal" element={<Navigate to="/hrms" replace />} />
 
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                {/* HRMS Routes - Completely Isolated */}
-                <Route path="/hrms" element={<HRMSLayout />}>
-                  <Route index element={<Navigate to="/hrms/dashboard" replace />} />
-                  <Route path="dashboard" element={<HRMSDashboard />} />
-                  <Route path="employees" element={<EmployeeList />} />
-                  <Route path="attendance" element={<AttendanceView />} />
-                  <Route path="leaves" element={<LeaveManager />} />
-                  <Route path="recruitment" element={<Recruitment />} />
-                </Route>
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={
+                      <AdminRoute>
+                        <AdminDashboard />
+                      </AdminRoute>
+                    } />
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </div>
-            <Footer />
-          </div>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+                <Footer />
+              </div>
+            } />
+          </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

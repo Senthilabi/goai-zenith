@@ -36,7 +36,12 @@ const HRMSLayout = () => {
                     } bg-slate-900 text-white transition-all duration-300 flex flex-col fixed h-full z-20`}
             >
                 <div className="p-4 flex items-center justify-between border-b border-slate-700">
-                    {isSidebarOpen && <span className="font-bold text-xl tracking-wider">Zenith HRMS</span>}
+                    {isSidebarOpen && (
+                        <div className="flex items-center gap-3">
+                            <img src="/logo.png" alt="GoAI Logo" className="w-8 h-8 object-contain" />
+                            <span className="font-bold text-xl tracking-wider">GoAI HRMS</span>
+                        </div>
+                    )}
                     <Button
                         variant="ghost"
                         size="icon"
@@ -53,8 +58,8 @@ const HRMSLayout = () => {
                             key={item.path}
                             to={item.path}
                             className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${isActive(item.path)
-                                    ? "bg-blue-600 text-white"
-                                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                                ? "bg-blue-600 text-white"
+                                : "text-slate-400 hover:bg-slate-800 hover:text-white"
                                 }`}
                         >
                             <item.icon className="h-5 w-5 shrink-0" />
@@ -77,7 +82,7 @@ const HRMSLayout = () => {
 
             {/* Main Content */}
             <main
-                className={`flex-1 transition-all duration-300 p-8 ${isSidebarOpen ? "ml-64" : "ml-20"
+                className={`flex-1 transition-all duration-300 p-8 pt-8 ${isSidebarOpen ? "ml-64" : "ml-20"
                     }`}
             >
                 <div className="max-w-7xl mx-auto">
