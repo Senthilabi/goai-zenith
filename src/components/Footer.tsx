@@ -9,17 +9,17 @@ const Footer = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
-          <div className="col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4">
+          <div className="bg-white/90 p-4 rounded-lg backdrop-blur-sm shadow-sm">
+            <Link to="/" className="flex items-center gap-2 mb-2">
               <div className="w-10 h-10 flex items-center justify-center">
                 <img src="/logo.png" alt="Go-AI Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="text-xl font-bold text-british-blue">GoAi Technologies Pvt Ltd</span>
+              <span className="text-xl font-bold text-british-blue whitespace-nowrap">GoAi Technologies Pvt Ltd</span>
             </Link>
-            <p className="text-sm text-accent-foreground/70">
+            <p className="text-sm font-medium text-british-blue/90 pl-1">
               Smartifying Life
             </p>
-            <p className="text-xs text-accent-foreground/60 mt-2">
+            <p className="text-xs text-british-blue/70 mt-1 pl-1">
               R&D and Sales Partner of Idaitics Ltd, UK
             </p>
           </div>
@@ -126,7 +126,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
+    </footer >
   );
 };
 

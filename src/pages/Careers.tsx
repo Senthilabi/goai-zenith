@@ -4,53 +4,104 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Rocket, Heart, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { Users, Rocket, Heart, TrendingUp, Lock } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { z } from "zod";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Validation Schema
+const applicationSchema = z.object({
+  full_name: z.string().min(2, "Full name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  linkedin_url: z.string().url("Invalid URL").refine((url) => url.includes("linkedin.com"), {
+    message: "Must be a valid LinkedIn URL (e.g. https://www.linkedin.com/in/...)",
+  }),
+  portfolio_url: z.string().url("Invalid URL").optional().or(z.literal("")),
+  position: z.string().min(1, "Please select a position"),
+  university: z.string().min(2, "University name is required"),
+  graduation_year: z.string().regex(/^\d{4}$/, "Please enter a valid year (e.g., 2026)"),
+  skills: z.string().optional(),
+  motivation: z.string().min(50, "Please provide at least 50 characters for your motivation"),
+  fax_number: z.string().max(0, "Bot detected"), // Honeypot: must be empty
+});
 
 const Careers = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user, loading } = useAuth(); // Auth Check
+
+  // Pre-fill email if logged in
+  useEffect(() => {
+    // Optional: Pre-fill logic if needed, but we mainly rely on user check
+  }, [user]);
+
+  const handleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.href,
+      },
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Safety check: Button should handle login, but if form submits differently:
+    if (!user) {
+      handleLogin();
+      return;
+    }
+
     setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
     const form = e.currentTarget; // Store form reference
 
-    const applicationData = {
-      full_name: formData.get("full_name") as string,
-      email: formData.get("email") as string,
-      phone: formData.get("phone") as string,
-      position: formData.get("position") as string,
-      university: formData.get("university") as string,
-      graduation_year: formData.get("graduation_year") as string,
-      skills: formData.get("skills") as string,
-      motivation: formData.get("motivation") as string,
-      resume_link: formData.get("resume_link") as string,
-    };
-
     try {
-      console.log("=== Starting application submission ===");
+      // 1. Honeypot Check (Silent Fail for Bots)
+      const honeypot = formData.get("fax_number");
+      if (honeypot) {
+        console.warn("Bot detected via honeypot");
+        // Fake success to fool the bot
+        toast({ title: "Application submitted!", description: "We'll review your application soon." });
+        form.reset();
+        return;
+      }
 
-      // Get resume file
+      // 2. Data Validation
+      const rawData = {
+        full_name: formData.get("full_name"),
+        email: user.email, // Always use verified email
+        phone: formData.get("phone"),
+        linkedin_url: formData.get("linkedin_url"),
+        portfolio_url: formData.get("portfolio_url"),
+        position: formData.get("position"),
+        university: formData.get("university"),
+        graduation_year: formData.get("graduation_year"),
+        skills: formData.get("skills"),
+        motivation: formData.get("motivation"),
+        fax_number: formData.get("fax_number") || "",
+      };
+
+      // Validate Text Fields with Zod
+      const validatedData = applicationSchema.parse(rawData);
+
+      // 3. File Validation
       const resumeFile = formData.get("resume") as File;
       if (!resumeFile || resumeFile.size === 0) {
         throw new Error("Please upload your resume");
       }
 
       // Validate file size (5MB max)
-      if (resumeFile.size > 5 * 1024 * 1024) {
-        throw new Error("Resume file size must be less than 5MB");
-      }
+      if (resumeFile.size > 5 * 1024 * 1024) throw new Error("Resume file size must be less than 5MB");
 
       // Validate file type
       const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (!allowedTypes.includes(resumeFile.type)) {
-        throw new Error("Please upload a PDF or Word document");
-      }
+      if (!allowedTypes.includes(resumeFile.type)) throw new Error("Please upload a PDF or Word document");
 
       console.log("Uploading resume:", resumeFile.name);
 
@@ -70,25 +121,28 @@ const Careers = () => {
 
       console.log("✅ Resume uploaded successfully:", filePath);
 
-      const applicationData = {
-        full_name: formData.get("full_name") as string,
-        email: formData.get("email") as string,
-        phone: formData.get("phone") as string,
-        position: formData.get("position") as string,
-        university: formData.get("university") as string,
-        graduation_year: formData.get("graduation_year") as string,
-        skills: formData.get("skills") as string || "",
-        motivation: formData.get("motivation") as string,
-        resume_link: filePath, // Store the file path
+      // Prepare Final Data for DB
+      const dbData = {
+        full_name: validatedData.full_name,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        linkedin_url: validatedData.linkedin_url,
+        portfolio_url: validatedData.portfolio_url || null,
+        position: validatedData.position,
+        university: validatedData.university,
+        graduation_year: validatedData.graduation_year,
+        skills: validatedData.skills || "",
+        motivation: validatedData.motivation,
+        resume_link: filePath,
       };
 
-      console.log("Application data:", applicationData);
+      console.log("Application data:", dbData);
 
       // Save to database
       console.log("Attempting to save to database...");
       const { data: savedData, error: dbError } = await supabase
         .from("internship_applications")
-        .insert([applicationData])
+        .insert([dbData])
         .select();
 
       if (dbError) {
@@ -98,74 +152,52 @@ const Careers = () => {
 
       console.log("✅ Saved to database successfully:", savedData);
 
-      // Send email notification
+      // Send email notification (Background)
       console.log("Sending email notification...");
-      const emailResponse = await fetch("https://api.web3forms.com/submit", {
+      fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           access_key: "eefdb10e-f591-4963-9a67-e45f0d8afda3",
           subject: "New Internship Application - GoAi Technologies",
-          from_name: applicationData.full_name,
+          from_name: dbData.full_name,
           email: "Hello@go-aitech.com",
           message: `
-New Internship Application Received
+New Application: ${dbData.full_name}
+Email: ${dbData.email} (Verified)
+Position: ${dbData.position}
+LinkedIn: ${dbData.linkedin_url}
+Portfolio: ${dbData.portfolio_url || 'N/A'}
 
-Name: ${applicationData.full_name}
-Email: ${applicationData.email}
-Phone: ${applicationData.phone}
-Position: ${applicationData.position}
-University: ${applicationData.university}
-Graduation Year: ${applicationData.graduation_year}
-
-Skills & Experience:
-${applicationData.skills || 'Not provided'}
-
-Motivation:
-${applicationData.motivation}
-
-Resume: Uploaded (${filePath})
-Download from: Supabase Storage > resumes bucket
-
-View in HRMS: ${window.location.origin}/hrms/recruitment
+View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
           `.trim()
         })
       });
 
-      const emailResult = await emailResponse.json();
-      console.log("Email response:", emailResult);
-
-      if (!emailResponse.ok) {
-        console.warn("⚠️ Email failed but continuing:", emailResult);
-      } else {
-        console.log("✅ Email sent successfully");
-      }
-
       toast({
-        title: "Application submitted!",
-        description: "We'll review your application and get back to you soon.",
+        title: "Application submitted successfully!",
+        description: "We have received your details. Good luck!",
       });
 
-      form.reset(); // Use stored form reference
+      form.reset();
       console.log("=== Application submission complete ===");
     } catch (error: any) {
       console.error("❌ ERROR submitting application:", error);
-      console.error("Error details:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
 
-      toast({
-        title: "Error",
-        description: error.message || "Failed to submit application. Please try again.",
-        variant: "destructive",
-      });
+      // Handle Zod Validation Errors
+      if (error instanceof z.ZodError) {
+        toast({ title: "Validation Error", description: error.errors[0].message, variant: "destructive" });
+      } else {
+        toast({ title: "Error", description: error.message || "Failed to submit application. Please try again.", variant: "destructive" });
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return <div className="pt-32 text-center">Loading...</div>;
+  }
 
   return (
     <main className="pt-24 pb-20">
@@ -230,17 +262,28 @@ View in HRMS: ${window.location.origin}/hrms/recruitment
           </Card>
         </div>
 
-        {/* Internship Form */}
+        {/* Auth Gate & Form */}
         <div className="max-w-3xl mx-auto">
           <Card className="shadow-elegant">
             <CardHeader>
               <CardTitle className="text-2xl">Internship Application</CardTitle>
               <CardDescription>
-                We're always looking for talented interns to join our team. Fill out the form below to apply.
+                {user ? (
+                  <span>Applying as <strong>{user.email}</strong></span>
+                ) : (
+                  <span>Sign in required to verify your application</span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+
+                {/* HONEYPOT FIELD (Hidden) */}
+                <div className="hidden" aria-hidden="true">
+                  <label htmlFor="fax_number">Fax Number</label>
+                  <input type="text" name="fax_number" id="fax_number" tabIndex={-1} autoComplete="off" />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="full_name">Full Name *</Label>
@@ -248,8 +291,15 @@ View in HRMS: ${window.location.origin}/hrms/recruitment
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input id="email" name="email" type="email" required placeholder="john@example.com" />
+                    <Label htmlFor="email">Email {user && "(Verified)"}</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      value={user?.email || ""}
+                      disabled
+                      placeholder={user ? "" : "Sign in to verify this field"}
+                      className={user ? "bg-muted" : ""}
+                    />
                   </div>
                 </div>
 
@@ -274,6 +324,19 @@ View in HRMS: ${window.location.origin}/hrms/recruitment
                         <SelectItem value="design">UI/UX Design</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+
+                {/* Social Media Links */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="linkedin_url">LinkedIn Profile *</Label>
+                    <Input id="linkedin_url" name="linkedin_url" required placeholder="https://linkedin.com/in/..." />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="portfolio_url">Portfolio/GitHub/Website</Label>
+                    <Input id="portfolio_url" name="portfolio_url" placeholder="https://..." />
                   </div>
                 </div>
 
@@ -305,7 +368,7 @@ View in HRMS: ${window.location.origin}/hrms/recruitment
                     id="motivation"
                     name="motivation"
                     required
-                    placeholder="Share your motivation and what you hope to learn..."
+                    placeholder="Share your motivation and what you hope to learn... (Min 50 chars)"
                     rows={4}
                   />
                 </div>
@@ -325,9 +388,16 @@ View in HRMS: ${window.location.origin}/hrms/recruitment
                   </p>
                 </div>
 
-                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Submit Application"}
-                </Button>
+                {user ? (
+                  <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Submit Application"}
+                  </Button>
+                ) : (
+                  <Button type="button" onClick={handleLogin} variant="hero" size="lg" className="w-full flex items-center justify-center gap-2">
+                    <Lock className="w-4 h-4" /> Sign in with Google to Apply
+                  </Button>
+                )}
+
               </form>
             </CardContent>
           </Card>

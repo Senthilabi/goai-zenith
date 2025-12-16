@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Calendar, Clock, CheckCircle, XCircle, Search, Trash2, Edit } from "lucide-react";
+import { Users, Calendar, Clock, CheckCircle, XCircle, Search, Trash2, Edit, FileText, Download, Briefcase } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -20,10 +20,11 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState("leaves");
 
     // Data States
-    const [stats, setStats] = useState({ totalEmployees: 0, presentToday: 0, pendingLeaves: 0 });
+    const [stats, setStats] = useState({ totalEmployees: 0, presentToday: 0, pendingLeaves: 0, newApplications: 0 });
     const [leaves, setLeaves] = useState<any[]>([]);
     const [attendance, setAttendance] = useState<any[]>([]);
     const [employees, setEmployees] = useState<any[]>([]);
+    const [applications, setApplications] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
 
     // Edit Employee State
@@ -55,11 +56,19 @@ const AdminDashboard = () => {
                 .eq("date", today);
             setAttendance(attData || []);
 
+            // 4. Fetch Internship Applications
+            const { data: appData } = await supabase
+                .from("internship_applications")
+                .select("*")
+                .order("created_at", { ascending: false });
+            setApplications(appData || []);
+
             // 4. Set Stats
             setStats({
                 totalEmployees: empData?.length || 0,
                 presentToday: attData?.length || 0,
-                pendingLeaves: leaveData?.length || 0
+                pendingLeaves: leaveData?.length || 0,
+                newApplications: appData?.filter(a => a.status === 'new').length || 0
             });
 
         } catch (error) {
@@ -122,6 +131,34 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleDownloadResume = async (path: string) => {
+        try {
+            const { data, error } = await supabase.storage
+                .from('resumes')
+                .createSignedUrl(path, 60);
+
+            if (error) throw error;
+            window.open(data.signedUrl, '_blank');
+        } catch (error: any) {
+            toast({ title: "Error", description: "Could not download resume: " + error.message, variant: "destructive" });
+        }
+    };
+
+    const handleUpdateApplicationStatus = async (id: string, newStatus: string) => {
+        try {
+            const { error } = await supabase
+                .from('internship_applications')
+                .update({ status: newStatus })
+                .eq('id', id);
+
+            if (error) throw error;
+            toast({ title: "Updated", description: "Application status updated" });
+            fetchDashboardData();
+        } catch (error: any) {
+            toast({ title: "Error", description: error.message, variant: "destructive" });
+        }
+    };
+
     const filteredEmployees = employees.filter(emp =>
         emp.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -140,7 +177,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Stats Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -168,6 +205,15 @@ const AdminDashboard = () => {
                             <div className="text-2xl font-bold text-orange-500">{stats.pendingLeaves}</div>
                         </CardContent>
                     </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium">New Applications</CardTitle>
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-blue-500">{stats.newApplications}</div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Main Content Tabs */}
@@ -176,6 +222,7 @@ const AdminDashboard = () => {
                         <TabsTrigger value="leaves">Leave Requests</TabsTrigger>
                         <TabsTrigger value="attendance">Attendance</TabsTrigger>
                         <TabsTrigger value="employees">Employees</TabsTrigger>
+                        <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
                     </TabsList>
 
                     {/* LEAVE REQUESTS TAB */}
@@ -317,6 +364,68 @@ const AdminDashboard = () => {
                                         </div>
                                     ))}
                                 </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    {/* RECRUITMENT TAB */}
+                    <TabsContent value="recruitment">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Internship Applications</CardTitle>
+                                <CardDescription>Review and manage incoming job applications.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {applications.length === 0 ? (
+                                    <p className="text-muted-foreground text-center py-8">No applications received yet.</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {applications.map(app => (
+                                            <div key={app.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg hover:bg-muted/10 transition-colors">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-semibold">{app.full_name}</p>
+                                                        <Badge variant="outline">{app.position}</Badge>
+                                                        <Badge className={
+                                                            app.status === 'new' ? 'bg-blue-500' :
+                                                                app.status === 'shortlisted' ? 'bg-green-500' :
+                                                                    app.status === 'rejected' ? 'bg-red-500' : 'bg-gray-500'
+                                                        }>{app.status}</Badge>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground">{app.email} • {app.phone}</p>
+                                                    <p className="text-sm text-muted-foreground">{app.university} ({app.graduation_year})</p>
+                                                    {app.motivation && (
+                                                        <p className="text-sm italic mt-2 text-muted-foreground max-w-2xl">"{app.motivation.substring(0, 100)}{app.motivation.length > 100 ? '...' : ''}"</p>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex flex-col md:flex-row gap-3 mt-4 md:mt-0 items-end md:items-center">
+                                                    <Select defaultValue={app.status} onValueChange={(val) => handleUpdateApplicationStatus(app.id, val)}>
+                                                        <SelectTrigger className="w-[130px]">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="new">New</SelectItem>
+                                                            <SelectItem value="reviewing">Reviewing</SelectItem>
+                                                            <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                                                            <SelectItem value="hired">Hired</SelectItem>
+                                                            <SelectItem value="rejected">Rejected</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+
+                                                    {app.resume_link ? (
+                                                        <Button variant="outline" size="sm" onClick={() => handleDownloadResume(app.resume_link)}>
+                                                            <FileText className="w-4 h-4 mr-2" />
+                                                            Resume
+                                                        </Button>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">No Resume</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
