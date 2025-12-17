@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
-export const AdminRoute = () => {
+export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     const { user, loading } = useAuth();
     const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
     const [checkingRole, setCheckingRole] = useState(true);
@@ -44,5 +43,5 @@ export const AdminRoute = () => {
         return <div className="h-screen flex items-center justify-center">Verifying access...</div>;
     }
 
-    return user && isAdmin ? <Outlet /> : <Navigate to="/portal" />;
+    return user && isAdmin ? <>{children}</> : <Navigate to="/portal" />;
 };

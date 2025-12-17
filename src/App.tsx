@@ -38,7 +38,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* HRMS Routes - Completely Isolated (No Navigation/Footer) */}
-            <Route path="/hrms" element={<HRMSLayout />}>
+            <Route path="/hrms" element={
+              <ProtectedRoute>
+                <HRMSLayout />
+              </ProtectedRoute>
+            }>
               <Route index element={<Navigate to="/hrms/dashboard" replace />} />
               <Route path="dashboard" element={<HRMSDashboard />} />
               <Route path="employees" element={<EmployeeList />} />

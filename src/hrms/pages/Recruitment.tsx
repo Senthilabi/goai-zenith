@@ -278,6 +278,18 @@ const Recruitment = () => {
                                                 <div>📱 {app.phone}</div>
                                                 <div>💼 {app.position}</div>
                                                 <div>🎓 {app.university} ({app.graduation_year})</div>
+                                                <div className="col-span-2 flex gap-4 mt-1">
+                                                    {(app as any).linkedin_url && (
+                                                        <a href={(app as any).linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                                                            LinkedIn
+                                                        </a>
+                                                    )}
+                                                    {(app as any).portfolio_url && (
+                                                        <a href={(app as any).portfolio_url} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline flex items-center gap-1">
+                                                            Portfolio
+                                                        </a>
+                                                    )}
+                                                </div>
                                                 <div className="col-span-2">📅 Applied: {format(new Date(app.created_at), 'MMM d, yyyy')}</div>
                                             </div>
                                         </div>
