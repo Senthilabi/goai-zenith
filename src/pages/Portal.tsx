@@ -14,17 +14,21 @@ import { Clock, Calendar, User, LogOut, CheckCircle, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
-interface Profile {
-    full_name: string;
-    role: string;
+interface HrmsProfile {
+    id: string; // The specific hrms_employee id
+    first_name: string;
+    last_name: string;
+    hrms_role: string;
     department: string;
     designation: string;
+    email: string;
 }
 
 interface Attendance {
     id: string;
-    clock_in: string;
-    clock_out: string | null;
+    check_in: string; // Changed from clock_in
+    check_out: string | null; // Changed from clock_out
+    status: string;
 }
 
 interface LeaveRequest {
@@ -38,7 +42,7 @@ interface LeaveRequest {
 const Portal = () => {
     const { user, signOut } = useAuth();
     const { toast } = useToast();
-    const [profile, setProfile] = useState<Profile | null>(null);
+    const [profile, setProfile] = useState<HrmsProfile | null>(null);
     const [attendance, setAttendance] = useState<Attendance | null>(null);
     const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,51 +50,93 @@ const Portal = () => {
 
     useEffect(() => {
         if (user) {
-            fetchProfile();
-            fetchTodayAttendance();
-            fetchLeaves();
+            initializePortal();
         }
     }, [user]);
 
-    const fetchProfile = async () => {
+    const initializePortal = async () => {
         try {
-            const { data, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", user!.id)
-                .single();
-            if (error) throw error;
-            setProfile(data);
+            setLoading(true);
+            const empProfile = await fetchOrCreateProfile();
+            if (empProfile) {
+                await Promise.all([
+                    fetchTodayAttendance(empProfile.id),
+                    fetchLeaves(empProfile.id)
+                ]);
+            }
         } catch (error) {
-            console.error("Error fetching profile:", error);
-        }
-    };
-
-    const fetchTodayAttendance = async () => {
-        try {
-            const today = new Date().toISOString().split("T")[0];
-            const { data, error } = await supabase
-                .from("attendance")
-                .select("*")
-                .eq("user_id", user!.id)
-                .eq("date", today)
-                .single();
-
-            if (error && error.code !== "PGRST116") throw error;
-            setAttendance(data);
-        } catch (error) {
-            console.error("Error fetching attendance:", error);
+            console.error("Portal initialization error:", error);
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchLeaves = async () => {
+    const fetchOrCreateProfile = async () => {
+        try {
+            // 1. Try to find existing HRMS profile linked to this Auth ID
+            const { data, error } = await supabase
+                .from("hrms_employees")
+                .select("*")
+                .eq("auth_id", user!.id)
+                .single();
+
+            if (data) {
+                setProfile(data);
+                return data;
+            }
+
+            // 2. If not found, auto-create a basic profile (Self-Onboarding)
+            // This ensures the demo flow doesn't break for new users
+            const { data: newProfile, error: createError } = await supabase
+                .from("hrms_employees")
+                .insert({
+                    auth_id: user!.id,
+                    email: user!.email,
+                    first_name: "New", // Default placeholders
+                    last_name: "Employee",
+                    employee_code: "EMP-" + Math.floor(Math.random() * 10000),
+                    designation: "Intern",
+                    department: "Engineering"
+                })
+                .select()
+                .single();
+
+            if (createError) throw createError;
+
+            setProfile(newProfile);
+            toast({ title: "Welcome!", description: "Your employee profile has been created." });
+            return newProfile;
+
+        } catch (error: any) {
+            console.error("Error fetching/creating profile:", error);
+            toast({ title: "Profile Error", description: "Could not load employee data.", variant: "destructive" });
+            return null;
+        }
+    };
+
+    const fetchTodayAttendance = async (employeeId: string) => {
+        try {
+            const today = new Date().toISOString().split("T")[0];
+            const { data, error } = await supabase
+                .from("hrms_attendance")
+                .select("*")
+                .eq("employee_id", employeeId)
+                .eq("date", today)
+                .single();
+
+            if (error && error.code !== "PGRST116") throw error; // PGRST116 is "Row not found" (normal)
+            setAttendance(data);
+        } catch (error) {
+            console.error("Error fetching attendance:", error);
+        }
+    };
+
+    const fetchLeaves = async (employeeId: string) => {
         try {
             const { data, error } = await supabase
-                .from("leave_requests")
+                .from("hrms_leave_requests")
                 .select("*")
-                .eq("user_id", user!.id)
+                .eq("employee_id", employeeId)
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
@@ -101,10 +147,16 @@ const Portal = () => {
     }
 
     const handleClockIn = async () => {
+        if (!profile) return;
         try {
             const { data, error } = await supabase
-                .from("attendance")
-                .insert({ user_id: user!.id, date: new Date().toISOString().split("T")[0] })
+                .from("hrms_attendance")
+                .insert({
+                    employee_id: profile.id,
+                    date: new Date().toISOString().split("T")[0],
+                    check_in: new Date().toISOString(),
+                    status: 'present'
+                })
                 .select()
                 .single();
 
@@ -117,11 +169,12 @@ const Portal = () => {
     };
 
     const handleClockOut = async () => {
+        if (!attendance) return;
         try {
             const { data, error } = await supabase
-                .from("attendance")
-                .update({ clock_out: new Date().toISOString() })
-                .eq("id", attendance!.id)
+                .from("hrms_attendance")
+                .update({ check_out: new Date().toISOString() })
+                .eq("id", attendance.id)
                 .select()
                 .single();
 
@@ -135,13 +188,14 @@ const Portal = () => {
 
     const handleLeaveSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (!profile) return;
         const formData = new FormData(e.currentTarget);
 
         try {
             const { error } = await supabase
-                .from("leave_requests")
+                .from("hrms_leave_requests")
                 .insert({
-                    user_id: user!.id,
+                    employee_id: profile.id,
                     leave_type: formData.get("leave_type"),
                     start_date: formData.get("start_date"),
                     end_date: formData.get("end_date"),
@@ -153,13 +207,13 @@ const Portal = () => {
 
             toast({ title: "Leave Requested", description: "Your request has been sent for approval." });
             setLeaveModalOpen(false);
-            fetchLeaves(); // Refresh list
+            fetchLeaves(profile.id); // Refresh list
         } catch (error: any) {
             toast({ title: "Error", description: error.message, variant: "destructive" });
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Loading Portal...</div>;
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-muted/20">Loading Employee Portal...</div>;
 
     return (
         <div className="min-h-screen bg-muted/20 pt-24 pb-12 px-4">
@@ -167,7 +221,7 @@ const Portal = () => {
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-british-blue">Employee Portal</h1>
-                        <p className="text-muted-foreground">Welcome back, {profile?.full_name || user?.email}</p>
+                        <p className="text-muted-foreground">Welcome, {profile?.first_name} {profile?.last_name}</p>
                     </div>
                     <Button variant="outline" onClick={signOut} className="text-destructive hover:text-destructive">
                         <LogOut className="w-4 h-4 mr-2" /> Sign Out
@@ -194,7 +248,7 @@ const Portal = () => {
                                         Clock In
                                     </Button>
                                 </div>
-                            ) : attendance.clock_out ? (
+                            ) : attendance.check_out ? (
                                 <div className="text-center space-y-4">
                                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                                         <CheckCircle className="w-8 h-8 text-green-600" />
@@ -202,8 +256,8 @@ const Portal = () => {
                                     <div>
                                         <p className="text-lg font-medium text-green-700">Day Completed!</p>
                                         <p className="text-sm text-muted-foreground">
-                                            In: {format(new Date(attendance.clock_in), "hh:mm a")} •
-                                            Out: {format(new Date(attendance.clock_out), "hh:mm a")}
+                                            In: {format(new Date(attendance.check_in), "hh:mm a")} •
+                                            Out: {format(new Date(attendance.check_out), "hh:mm a")}
                                         </p>
                                     </div>
                                 </div>
@@ -215,7 +269,7 @@ const Portal = () => {
                                     <div>
                                         <p className="text-lg font-medium text-blue-700">Currently Working</p>
                                         <p className="text-sm text-muted-foreground">
-                                            Clocked in at {format(new Date(attendance.clock_in), "hh:mm a")}
+                                            Clocked in at {format(new Date(attendance.check_in), "hh:mm a")}
                                         </p>
                                     </div>
                                     <Button size="lg" onClick={handleClockOut} variant="destructive" className="w-48">
@@ -236,15 +290,19 @@ const Portal = () => {
                         <CardContent className="space-y-4">
                             <div>
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Full Name</span>
-                                <p className="font-medium">{profile?.full_name || "N/A"}</p>
+                                <p className="font-medium">{profile?.first_name} {profile?.last_name}</p>
                             </div>
                             <div>
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Role</span>
-                                <p className="font-medium">{profile?.role || "Employee"}</p>
+                                <p className="font-medium capitalize">{profile?.hrms_role || "Employee"}</p>
                             </div>
                             <div>
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Department</span>
-                                <p className="font-medium">{profile?.department || "General"}</p>
+                                <p className="font-medium">{profile?.department || "Unassigned"}</p>
+                            </div>
+                            <div>
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Designation</span>
+                                <p className="font-medium">{profile?.designation || "N/A"}</p>
                             </div>
                         </CardContent>
                     </Card>

@@ -7,7 +7,7 @@
 /* 1. HRMS EMPLOYEES (Master Data) */
 create table if not exists public.hrms_employees (
   id uuid default gen_random_uuid() primary key,
-  auth_id uuid references auth.users(id) on delete set null, -- Linked when user registers
+  auth_id uuid, -- Link to auth.users (can be null initially, linked later)
   employee_code text unique,
   first_name text not null,
   last_name text not null,
@@ -22,15 +22,18 @@ create table if not exists public.hrms_employees (
 
 alter table public.hrms_employees enable row level security;
 
--- Policies
+-- Policies (Drop first to avoid errors)
+drop policy if exists "HRMS: Employees can view their own profile" on public.hrms_employees;
 create policy "HRMS: Employees can view their own profile" 
   on public.hrms_employees for select using (auth.uid() = auth_id);
 
+drop policy if exists "HRMS: Admins can view all profiles" on public.hrms_employees;
 create policy "HRMS: Admins can view all profiles"
   on public.hrms_employees for select using (
     exists (select 1 from public.hrms_employees where auth_id = auth.uid() and hrms_role in ('super_admin', 'hr_admin'))
   );
 
+drop policy if exists "HRMS: Admins can insert/update profiles" on public.hrms_employees;
 create policy "HRMS: Admins can insert/update profiles"
   on public.hrms_employees for all using (
     exists (select 1 from public.hrms_employees where auth_id = auth.uid() and hrms_role in ('super_admin', 'hr_admin'))
@@ -51,12 +54,27 @@ create table if not exists public.hrms_attendance (
 alter table public.hrms_attendance enable row level security;
 
 -- Policies
+drop policy if exists "HRMS: Users view own attendance" on public.hrms_attendance;
 create policy "HRMS: Users view own attendance" 
-  on public.hrms_attendance for select using (auth.uid() = employee_id);
+  on public.hrms_attendance for select using (
+    employee_id in (select id from public.hrms_employees where auth_id = auth.uid())
+  );
 
+drop policy if exists "HRMS: Admins view all attendance" on public.hrms_attendance;
 create policy "HRMS: Admins view all attendance"
   on public.hrms_attendance for select using (
-    exists (select 1 from public.hrms_employees where id = auth.uid() and hrms_role in ('super_admin', 'hr_admin'))
+    exists (select 1 from public.hrms_employees where auth_id = auth.uid() and hrms_role in ('super_admin', 'hr_admin'))
+  );
+
+drop policy if exists "HRMS: Users clock in/out" on public.hrms_attendance;
+create policy "HRMS: Users clock in/out"
+  on public.hrms_attendance for insert with check (
+    employee_id in (select id from public.hrms_employees where auth_id = auth.uid())
+  );
+  
+create policy "HRMS: Users update own attendance (clock out)"
+  on public.hrms_attendance for update using (
+    employee_id in (select id from public.hrms_employees where auth_id = auth.uid())
   );
 
 
@@ -76,10 +94,26 @@ create table if not exists public.hrms_leave_requests (
 alter table public.hrms_leave_requests enable row level security;
 
 -- Policies
+drop policy if exists "HRMS: Users view own leaves" on public.hrms_leave_requests;
 create policy "HRMS: Users view own leaves" 
-  on public.hrms_leave_requests for select using (auth.uid() = employee_id);
+  on public.hrms_leave_requests for select using (
+    employee_id in (select id from public.hrms_employees where auth_id = auth.uid())
+  );
 
+drop policy if exists "HRMS: Users create leaves" on public.hrms_leave_requests;
+create policy "HRMS: Users create leaves" 
+  on public.hrms_leave_requests for insert with check (
+    employee_id in (select id from public.hrms_employees where auth_id = auth.uid())
+  );
+
+drop policy if exists "HRMS: Admins view all leaves" on public.hrms_leave_requests;
 create policy "HRMS: Admins view all leaves"
   on public.hrms_leave_requests for select using (
-    exists (select 1 from public.hrms_employees where id = auth.uid() and hrms_role in ('super_admin', 'hr_admin'))
+    exists (select 1 from public.hrms_employees where auth_id = auth.uid() and hrms_role in ('super_admin', 'hr_admin'))
+  );
+
+drop policy if exists "HRMS: Admins manage leaves" on public.hrms_leave_requests;
+create policy "HRMS: Admins manage leaves"
+  on public.hrms_leave_requests for update using (
+    exists (select 1 from public.hrms_employees where auth_id = auth.uid() and hrms_role in ('super_admin', 'hr_admin'))
   );

@@ -37,33 +37,43 @@ const AdminDashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            // 1. Fetch Employees
-            const { data: empData } = await supabase.from("profiles").select("*");
+            // 1. Fetch Employees (HRMS Master)
+            const { data: empData, error: empError } = await supabase.from("hrms_employees").select("*");
+            if (empError) throw empError;
             setEmployees(empData || []);
 
-            // 2. Fetch Pending Leaves
-            const { data: leaveData } = await supabase
-                .from("leave_requests")
-                .select(`*, profiles(full_name, email)`)
+            // 2. Fetch Pending Leaves (Joined with Employee Info)
+            const { data: leaveData, error: leaveError } = await supabase
+                .from("hrms_leave_requests")
+                .select(`
+                    *,
+                    hrms_employees (first_name, last_name, email)
+                `)
                 .eq("status", "pending");
+            if (leaveError) throw leaveError;
             setLeaves(leaveData || []);
 
             // 3. Fetch Today's Attendance
             const today = new Date().toISOString().split("T")[0];
-            const { data: attData } = await supabase
-                .from("attendance")
-                .select(`*, profiles(full_name)`)
+            const { data: attData, error: attError } = await supabase
+                .from("hrms_attendance")
+                .select(`
+                    *,
+                    hrms_employees (first_name, last_name)
+                `)
                 .eq("date", today);
+            if (attError) throw attError;
             setAttendance(attData || []);
 
-            // 4. Fetch Internship Applications
-            const { data: appData } = await supabase
+            // 4. Fetch Internship Applications (Unchanged - Separate System)
+            const { data: appData, error: appError } = await supabase
                 .from("internship_applications")
                 .select("*")
                 .order("created_at", { ascending: false });
+            if (appError) throw appError;
             setApplications(appData || []);
 
-            // 4. Set Stats
+            // 5. Set Stats
             setStats({
                 totalEmployees: empData?.length || 0,
                 presentToday: attData?.length || 0,
@@ -71,16 +81,16 @@ const AdminDashboard = () => {
                 newApplications: appData?.filter(a => a.status === 'new').length || 0
             });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching admin data:", error);
-            toast({ title: "Error", description: "Failed to load dashboard data", variant: "destructive" });
+            // Don't show toast on initial load multiple errors, just console
         }
     };
 
     const handleLeaveAction = async (id: string, status: 'approved' | 'rejected') => {
         try {
             const { error } = await supabase
-                .from("leave_requests")
+                .from("hrms_leave_requests")
                 .update({ status })
                 .eq("id", id);
 
@@ -99,9 +109,9 @@ const AdminDashboard = () => {
 
         try {
             const { error } = await supabase
-                .from("profiles")
+                .from("hrms_employees")
                 .update({
-                    role: formData.get("role"),
+                    hrms_role: formData.get("role"),
                     department: formData.get("department"),
                     designation: formData.get("designation")
                 })
@@ -118,10 +128,14 @@ const AdminDashboard = () => {
     };
 
     const handleDeleteEmployee = async (id: string) => {
-        if (!confirm("Are you sure? This will delete the employee profile. (You must also delete the Auth user in Supabase)")) return;
+        if (!confirm("Are you sure? This will delete the employee HR record.")) return;
 
         try {
-            const { error } = await supabase.from("profiles").delete().eq("id", id);
+            const { error } = await supabase
+                .from("hrms_employees")
+                .delete()
+                .eq("id", id);
+
             if (error) throw error;
 
             toast({ title: "Deleted", description: "Profile removed." });
@@ -160,7 +174,7 @@ const AdminDashboard = () => {
     };
 
     const filteredEmployees = employees.filter(emp =>
-        emp.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (emp.first_name + ' ' + emp.last_name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -240,7 +254,10 @@ const AdminDashboard = () => {
                                         {leaves.map(leave => (
                                             <div key={leave.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg bg-card">
                                                 <div>
-                                                    <p className="font-semibold">{leave.profiles?.full_name || "Unknown"} <span className="text-muted-foreground text-sm">({leave.leave_type})</span></p>
+                                                    <p className="font-semibold">
+                                                        {leave.hrms_employees?.first_name} {leave.hrms_employees?.last_name}
+                                                        <span className="text-muted-foreground text-sm font-normal ml-2">({leave.leave_type})</span>
+                                                    </p>
                                                     <p className="text-sm text-muted-foreground">
                                                         {format(new Date(leave.start_date), "MMM d")} - {format(new Date(leave.end_date), "MMM d, yyyy")}
                                                     </p>
@@ -277,12 +294,12 @@ const AdminDashboard = () => {
                                         {attendance.map(att => (
                                             <div key={att.id} className="flex justify-between items-center p-4 border rounded-lg">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-2 h-2 rounded-full ${att.clock_out ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}`} />
-                                                    <span className="font-medium">{att.profiles?.full_name}</span>
+                                                    <div className={`w-2 h-2 rounded-full ${att.check_out ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}`} />
+                                                    <span className="font-medium">{att.hrms_employees?.first_name} {att.hrms_employees?.last_name}</span>
                                                 </div>
                                                 <div className="text-sm text-muted-foreground">
-                                                    In: {format(new Date(att.clock_in), "hh:mm a")}
-                                                    {att.clock_out && ` • Out: ${format(new Date(att.clock_out), "hh:mm a")}`}
+                                                    In: {format(new Date(att.check_in), "hh:mm a")}
+                                                    {att.check_out && ` • Out: ${format(new Date(att.check_out), "hh:mm a")}`}
                                                 </div>
                                             </div>
                                         ))}
@@ -310,10 +327,10 @@ const AdminDashboard = () => {
                                     {filteredEmployees.map(emp => (
                                         <div key={emp.id} className="flex justify-between items-center p-4 border rounded-lg hover:bg-muted/10 transition-colors">
                                             <div>
-                                                <p className="font-semibold">{emp.full_name || "No Name"}</p>
+                                                <p className="font-semibold">{emp.first_name} {emp.last_name}</p>
                                                 <p className="text-sm text-muted-foreground">{emp.email}</p>
                                                 <div className="flex gap-2 mt-1">
-                                                    <Badge variant="secondary">{emp.role}</Badge>
+                                                    <Badge variant="secondary" className="capitalize">{emp.hrms_role}</Badge>
                                                     {emp.department && <Badge variant="outline">{emp.department}</Badge>}
                                                 </div>
                                             </div>
@@ -334,13 +351,14 @@ const AdminDashboard = () => {
                                                         <form onSubmit={handleUpdateEmployee} className="space-y-4">
                                                             <div className="space-y-2">
                                                                 <Label>Role</Label>
-                                                                <Select name="role" defaultValue={emp.role}>
+                                                                <Select name="role" defaultValue={emp.hrms_role}>
                                                                     <SelectTrigger>
                                                                         <SelectValue />
                                                                     </SelectTrigger>
                                                                     <SelectContent>
                                                                         <SelectItem value="employee">Employee</SelectItem>
-                                                                        <SelectItem value="admin">Admin</SelectItem>
+                                                                        <SelectItem value="hr_admin">HR Admin</SelectItem>
+                                                                        <SelectItem value="super_admin">Super Admin</SelectItem>
                                                                     </SelectContent>
                                                                 </Select>
                                                             </div>
@@ -394,6 +412,21 @@ const AdminDashboard = () => {
                                                     </div>
                                                     <p className="text-sm text-muted-foreground">{app.email} • {app.phone}</p>
                                                     <p className="text-sm text-muted-foreground">{app.university} ({app.graduation_year})</p>
+
+                                                    {/* Social Links */}
+                                                    <div className="flex gap-3 text-xs mt-1">
+                                                        {app.linkedin_url && (
+                                                            <a href={app.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                                                LinkedIn
+                                                            </a>
+                                                        )}
+                                                        {app.portfolio_url && (
+                                                            <a href={app.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+                                                                Portfolio
+                                                            </a>
+                                                        )}
+                                                    </div>
+
                                                     {app.motivation && (
                                                         <p className="text-sm italic mt-2 text-muted-foreground max-w-2xl">"{app.motivation.substring(0, 100)}{app.motivation.length > 100 ? '...' : ''}"</p>
                                                     )}
