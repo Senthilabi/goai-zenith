@@ -16,7 +16,7 @@ const OnboardingWizard = () => {
     const { toast } = useToast();
 
     const [loading, setLoading] = useState(true);
-    const [step, setStep] = useState(1); // 1: Details, 2: Offer, 3: NDA, 4: Done
+    const [step, setStep] = useState(1); // 1: Details, 2: Docs, 3: Offer, 4: NDA, 5: Done
     const [data, setData] = useState<any>(null);
     const [application, setApplication] = useState<any>(null);
 
@@ -25,6 +25,11 @@ const OnboardingWizard = () => {
     const [agreedToOffer, setAgreedToOffer] = useState(false);
     const [agreedToNDA, setAgreedToNDA] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+
+    // File States
+    const [photo, setPhoto] = useState<File | null>(null);
+    const [idProof, setIdProof] = useState<File | null>(null);
+    const [certificates, setCertificates] = useState<File | null>(null);
 
     useEffect(() => {
         if (id) fetchOnboardingData();
@@ -54,8 +59,9 @@ const OnboardingWizard = () => {
             setApplication(appData);
 
             // Determine Step
-            if (obData.nda_status === 'signed') setStep(4);
-            else if (obData.offer_status === 'accepted') setStep(3);
+            if (obData.nda_status === 'signed') setStep(5);
+            else if (obData.offer_status === 'accepted') setStep(4);
+            else if (obData.photo_url && obData.id_proof_url) setStep(3); // Docs done
             else if (obData.residential_address) setStep(2);
             else setStep(1);
 
@@ -89,7 +95,48 @@ const OnboardingWizard = () => {
         }
     };
 
-    // --- STEP 2: GENERATE & ACCEPT OFFER ---
+    // --- STEP 2: UPLOAD DOCS ---
+    const handleUploadDocs = async () => {
+        if (!photo || !idProof) {
+            toast({ title: "Missing Files", description: "Please upload at least Photo and ID Proof.", variant: "destructive" });
+            return;
+        }
+        setSubmitting(true);
+        try {
+            const uploadFile = async (file: File, prefix: string) => {
+                const ext = file.name.split('.').pop();
+                const path = `${id}/${prefix}_${Date.now()}.${ext}`;
+                const { error } = await supabase.storage.from('onboarding_docs').upload(path, file);
+                if (error) throw error;
+                return path;
+            };
+
+            const photoUrl = await uploadFile(photo, 'photo');
+            const idProofUrl = await uploadFile(idProof, 'id_proof');
+            const certUrl = certificates ? await uploadFile(certificates, 'certs') : null;
+
+            const { error } = await supabase
+                .from('hrms_onboarding')
+                .update({
+                    photo_url: photoUrl,
+                    id_proof_url: idProofUrl,
+                    certificates_url: certUrl,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', id);
+
+            if (error) throw error;
+            toast({ title: "Documents Uploaded", description: "Proceeding to Offer Letter." });
+            setStep(3);
+        } catch (error: any) {
+            console.error(error);
+            toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    // --- STEP 3: GENERATE & ACCEPT OFFER ---
     const generateOfferLetter = () => {
         const doc = new jsPDF();
 
@@ -142,7 +189,7 @@ We look forward to welcoming you to the team.`;
 
             if (error) throw error;
             toast({ title: "Offer Accepted!", description: "Welcome aboard!" });
-            setStep(3);
+            setStep(4);
         } catch (error: any) {
             toast({ title: "Error", description: error.message, variant: "destructive" });
         } finally {
@@ -150,7 +197,7 @@ We look forward to welcoming you to the team.`;
         }
     };
 
-    // --- STEP 3: SIGN NDA ---
+    // --- STEP 4: SIGN NDA ---
     const handleSignNDA = async () => {
         setSubmitting(true);
         try {
@@ -169,7 +216,7 @@ We look forward to welcoming you to the team.`;
 
             if (error) throw error;
             toast({ title: "NDA Signed", description: "Onboarding Complete!" });
-            setStep(4);
+            setStep(5);
         } catch (error: any) {
             toast({ title: "Error", description: error.message, variant: "destructive" });
         } finally {
@@ -186,13 +233,14 @@ We look forward to welcoming you to the team.`;
             <Card className="w-full max-w-2xl shadow-xl">
                 <CardHeader className="text-center border-b bg-white rounded-t-xl">
                     <CardTitle className="text-2xl font-bold text-slate-900">
-                        {step === 4 ? "Welcome to GoAi!" : "Candidate Onboarding"}
+                        {step === 5 ? "Welcome to GoAi!" : "Candidate Onboarding"}
                     </CardTitle>
                     <CardDescription>
-                        {step === 1 && "Step 1/3: Confirm Details"}
-                        {step === 2 && "Step 2/3: Offer Letter"}
-                        {step === 3 && "Step 3/3: Non-Disclosure Agreement"}
-                        {step === 4 && "Setup Complete"}
+                        {step === 1 && "Step 1/4: Confirm Details"}
+                        {step === 2 && "Step 2/4: Document Verification"}
+                        {step === 3 && "Step 3/4: Offer Letter"}
+                        {step === 4 && "Step 4/4: Non-Disclosure Agreement"}
+                        {step === 5 && "Setup Complete"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 space-y-6">
@@ -220,8 +268,37 @@ We look forward to welcoming you to the team.`;
                         </div>
                     )}
 
-                    {/* STEP 2: OFFER LETTER */}
+                    {/* STEP 2: DOCUMENTS */}
                     {step === 2 && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                            <div className="bg-slate-50 p-4 rounded-lg text-sm text-slate-600 mb-4">
+                                <p>Please upload the following documents for identity verification.</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Passport Size Photo *</Label>
+                                    <Input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] || null)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Govt ID Proof (Aadhaar/PAN/Passport) *</Label>
+                                    <Input type="file" accept=".pdf,.jpg,.png" onChange={(e) => setIdProof(e.target.files?.[0] || null)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Certificates (Optional - Combined PDF)</Label>
+                                    <Input type="file" accept=".pdf" onChange={(e) => setCertificates(e.target.files?.[0] || null)} />
+                                </div>
+                            </div>
+
+                            <Button onClick={handleUploadDocs} disabled={!photo || !idProof || submitting} className="w-full">
+                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Upload & Continue
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* STEP 3: OFFER LETTER */}
+                    {step === 3 && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                             <div className="text-center space-y-4">
                                 <div className="h-16 w-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
@@ -250,8 +327,8 @@ We look forward to welcoming you to the team.`;
                         </div>
                     )}
 
-                    {/* STEP 3: NDA */}
-                    {step === 3 && (
+                    {/* STEP 4: NDA */}
+                    {step === 4 && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                             <div className="space-y-4">
                                 <Label>Non-Disclosure Agreement (Standard)</Label>
@@ -280,8 +357,8 @@ We look forward to welcoming you to the team.`;
                         </div>
                     )}
 
-                    {/* STEP 4: SUCCESS */}
-                    {step === 4 && (
+                    {/* STEP 5: SUCCESS */}
+                    {step === 5 && (
                         <div className="text-center space-y-6 animate-in fade-in slide-in-from-bottom-4">
                             <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
                                 <CheckCircle2 className="h-10 w-10" />

@@ -297,9 +297,18 @@ const EmployeeList = () => {
                                         <TableRow key={emp.id}>
                                             <TableCell className="font-mono text-xs">{emp.employee_code}</TableCell>
                                             <TableCell>
-                                                <div>
-                                                    <div className="font-medium">{emp.first_name} {emp.last_name}</div>
-                                                    <div className="text-xs text-muted-foreground">{emp.email}</div>
+                                                <div className="flex items-center gap-3">
+                                                    {emp.photo_url && (
+                                                        <img
+                                                            src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/onboarding_docs/${emp.photo_url}`}
+                                                            alt={`${emp.first_name} ${emp.last_name}`}
+                                                            className="w-10 h-10 rounded-full object-cover border-2 border-slate-200"
+                                                        />
+                                                    )}
+                                                    <div>
+                                                        <div className="font-medium">{emp.first_name} {emp.last_name}</div>
+                                                        <div className="text-xs text-muted-foreground">{emp.email}</div>
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
