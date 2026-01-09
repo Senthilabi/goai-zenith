@@ -28,6 +28,8 @@ import LeaveManager from "./hrms/pages/LeaveManager";
 import Recruitment from "./hrms/pages/Recruitment";
 import TaskBoard from "./hrms/pages/TaskBoard";
 
+import OnboardingWizard from "./hrms/pages/OnboardingWizard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -66,6 +68,9 @@ const App = () => (
                     <Route path="/insights" element={<Insights />} />
                     <Route path="/careers" element={<Careers />} />
                     <Route path="/contact" element={<Contact />} />
+
+                    {/* Onboarding Route (Public/Token based) */}
+                    <Route path="/onboarding/:id" element={<OnboardingWizard />} />
 
                     {/* Employee Portal Routes */}
                     <Route path="/employee-login" element={<EmployeeLogin />} />
