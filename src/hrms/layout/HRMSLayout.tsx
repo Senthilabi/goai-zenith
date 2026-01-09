@@ -26,6 +26,7 @@ const HRMSLayout = () => {
         { name: "Attendance", path: "/hrms/attendance", icon: Clock },
         { name: "Leave Mgmt", path: "/hrms/leaves", icon: Calendar },
         { name: "Recruitment", path: "/hrms/recruitment", icon: Briefcase },
+        { name: "Tasks", path: "/hrms/tasks", icon: LayoutDashboard },
     ];
 
     return (

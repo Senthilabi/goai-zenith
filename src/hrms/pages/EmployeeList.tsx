@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserPlus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, UserPlus, Shield, ShieldAlert, CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,10 @@ const EmployeeList = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+
+    // Form states
+    const [selectedRole, setSelectedRole] = useState("employee");
+    const [selectedDepartment, setSelectedDepartment] = useState("");
 
     useEffect(() => {
         fetchEmployees();
@@ -64,6 +69,7 @@ const EmployeeList = () => {
             department: formData.get("department"),
             designation: formData.get("designation"),
             joining_date: formData.get("joining_date"),
+            hrms_role: selectedRole,
             ...(editingId ? {} : { status: 'active' })
         };
 
@@ -93,6 +99,8 @@ const EmployeeList = () => {
 
     const openEditModal = (employee: any) => {
         setEditingId(employee.id);
+        setSelectedRole(employee.hrms_role || "employee");
+        setSelectedDepartment(employee.department || "");
         setIsAddOpen(true);
     };
 
@@ -105,6 +113,15 @@ const EmployeeList = () => {
 
     const currentEmployee = editingId ? employees.find(e => e.id === editingId) : null;
 
+    const getRoleBadge = (role: string) => {
+        switch (role) {
+            case 'super_admin': return <Badge variant="destructive">Super Admin</Badge>;
+            case 'hr_admin': return <Badge variant="default" className="bg-purple-600">HR Admin</Badge>;
+            case 'team_manager': return <Badge variant="default" className="bg-blue-600">Manager</Badge>;
+            default: return <Badge variant="secondary">Employee</Badge>;
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -114,14 +131,20 @@ const EmployeeList = () => {
                 </div>
                 <Dialog open={isAddOpen} onOpenChange={(open) => {
                     setIsAddOpen(open);
-                    if (!open) setEditingId(null);
+                    if (!open) {
+                        setEditingId(null);
+                        setSelectedRole("employee");
+                    }
                 }}>
                     <DialogTrigger asChild>
-                        <Button className="gap-2" onClick={() => setEditingId(null)}>
+                        <Button className="gap-2" onClick={() => {
+                            setEditingId(null);
+                            setSelectedRole("employee");
+                        }}>
                             <UserPlus className="h-4 w-4" /> Add Employee
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>{editingId ? "Edit Employee" : "Add New Employee"}</DialogTitle>
                         </DialogHeader>
@@ -202,6 +225,24 @@ const EmployeeList = () => {
                                 </div>
                             </div>
 
+                            <div className="space-y-2">
+                                <Label htmlFor="role">System Role</Label>
+                                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="employee">Employee (Standard Access)</SelectItem>
+                                        <SelectItem value="team_manager">Team Manager (Can view team)</SelectItem>
+                                        <SelectItem value="hr_admin">HR Admin (Full HRMS Access)</SelectItem>
+                                        <SelectItem value="super_admin">Super Admin (Full System Access)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-xs text-muted-foreground">
+                                    Determines what data this user can access in the portal.
+                                </p>
+                            </div>
+
                             <Button type="submit" className="w-full">
                                 {editingId ? "Update Employee" : "Create Employee Record"}
                             </Button>
@@ -232,9 +273,9 @@ const EmployeeList = () => {
                                 <TableRow>
                                     <TableHead>Code</TableHead>
                                     <TableHead>Name</TableHead>
-                                    <TableHead>Department</TableHead>
+                                    <TableHead>Role / Dept</TableHead>
                                     <TableHead>Designation</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    <TableHead>Auth Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -261,12 +302,25 @@ const EmployeeList = () => {
                                                     <div className="text-xs text-muted-foreground">{emp.email}</div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>{emp.department}</TableCell>
+                                            <TableCell>
+                                                <div className="space-y-1">
+                                                    {getRoleBadge(emp.hrms_role)}
+                                                    <div className="text-xs text-muted-foreground">{emp.department}</div>
+                                                </div>
+                                            </TableCell>
                                             <TableCell>{emp.designation}</TableCell>
                                             <TableCell>
-                                                <Badge variant={emp.status === 'active' ? 'default' : 'secondary'}>
-                                                    {emp.status}
-                                                </Badge>
+                                                {emp.auth_id ? (
+                                                    <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                        <span>Linked</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 text-xs text-amber-600 font-medium">
+                                                        <ShieldAlert className="h-3.5 w-3.5" />
+                                                        <span>Not Linked</span>
+                                                    </div>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">

@@ -26,6 +26,7 @@ import EmployeeList from "./hrms/pages/EmployeeList";
 import AttendanceView from "./hrms/pages/AttendanceView";
 import LeaveManager from "./hrms/pages/LeaveManager";
 import Recruitment from "./hrms/pages/Recruitment";
+import TaskBoard from "./hrms/pages/TaskBoard";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="attendance" element={<AttendanceView />} />
               <Route path="leaves" element={<LeaveManager />} />
               <Route path="recruitment" element={<Recruitment />} />
+              <Route path="tasks" element={<TaskBoard />} />
             </Route>
 
             {/* Main Website Routes (With Navigation/Footer) */}
