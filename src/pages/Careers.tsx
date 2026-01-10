@@ -63,9 +63,11 @@ const Careers = () => {
     }
   };
 
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailAuth) return;
+  const handleEmailSignIn = async () => {
+    if (!emailAuth) {
+      toast({ title: "Email required", description: "Please enter your email address.", variant: "destructive" });
+      return;
+    }
 
     setAuthLoading(true);
     try {
@@ -98,9 +100,13 @@ const Careers = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Safety check: Button should handle login, but if form submits differently:
+    // Safety check: Form should not be submittable without a user
     if (!user) {
-      handleLogin();
+      toast({
+        title: "Authentication Required",
+        description: "Please verify your email using the Magic Link before submitting.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -452,7 +458,7 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
                     </div>
 
                     {!otpSent ? (
-                      <form onSubmit={handleEmailSignIn} className="space-y-4">
+                      <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="email-auth">Work/Personal Email</Label>
                           <Input
@@ -465,13 +471,14 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
                           />
                         </div>
                         <Button
-                          type="submit"
+                          type="button"
+                          onClick={handleEmailSignIn}
                           className="w-full bg-british-blue hover:bg-british-blue/90 text-white"
                           disabled={authLoading}
                         >
                           {authLoading ? "Sending..." : "Send Magic Link to Email"}
                         </Button>
-                      </form>
+                      </div>
                     ) : (
                       <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in zoom-in-95">
                         <h4 className="font-semibold text-blue-900 mb-1">Check your inbox!</h4>
@@ -489,27 +496,6 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
                         </Button>
                       </div>
                     )}
-
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">Or</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="button"
-                      onClick={handleLogin}
-                      variant="outline"
-                      size="lg"
-                      className="w-full flex items-center justify-center gap-2 border-slate-200"
-                      disabled={authLoading}
-                    >
-                      <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-                      Sign in with Google
-                    </Button>
                   </div>
                 )}
 
