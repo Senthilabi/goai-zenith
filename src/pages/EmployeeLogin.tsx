@@ -1,7 +1,8 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +13,15 @@ import { Lock, Mail, Loader2 } from "lucide-react";
 const EmployeeLogin = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { toast } = useToast();
+
+    const isRecoveryMode = searchParams.get("type") === "recovery";
+
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,6 +51,42 @@ const EmployeeLogin = () => {
         }
     };
 
+    const handleUpdatePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newPassword !== confirmPassword) {
+            toast({
+                title: "Passwords don't match",
+                description: "Please make sure both passwords are the same.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword,
+            });
+
+            if (error) throw error;
+
+            toast({
+                title: "Password Updated",
+                description: "Your password has been changed successfully. You can now log in.",
+            });
+            navigate("/employee-login", { replace: true });
+        } catch (error: any) {
+            toast({
+                title: "Update Failed",
+                description: error.message || "Could not update password",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
             <Card className="w-full max-w-md shadow-elegant border-british-blue/10">
@@ -51,61 +94,117 @@ const EmployeeLogin = () => {
                     <div className="mx-auto w-12 h-12 bg-british-blue/10 rounded-full flex items-center justify-center mb-4">
                         <Lock className="w-6 h-6 text-british-blue" />
                     </div>
-                    <CardTitle className="text-2xl text-british-blue">Employee Portal</CardTitle>
+                    <CardTitle className="text-2xl text-british-blue">
+                        {isRecoveryMode ? "Set New Password" : "Employee Portal"}
+                    </CardTitle>
                     <CardDescription>
-                        Secure login for GoAi Technologies staff
+                        {isRecoveryMode
+                            ? "Please enter your new secure password"
+                            : "Secure login for GoAi Technologies staff"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleLogin} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Work Email</Label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="name@go-aitech.com"
-                                    className="pl-9"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
+                    {!isRecoveryMode ? (
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Work Email</Label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        placeholder="name@go-aitech.com"
+                                        className="pl-9"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="••••••••"
-                                    className="pl-9"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                />
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Password</Label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        placeholder="••••••••"
+                                        className="pl-9"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        <Button
-                            type="submit"
-                            className="w-full bg-british-blue hover:bg-british-blue/90"
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Authenticating...
-                                </>
-                            ) : (
-                                "Sign In"
-                            )}
-                        </Button>
-                    </form>
+                            <Button
+                                type="submit"
+                                className="w-full bg-british-blue hover:bg-british-blue/90"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Authenticating...
+                                    </>
+                                ) : (
+                                    "Sign In"
+                                )}
+                            </Button>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleUpdatePassword} className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="newPassword">New Password</Label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="newPassword"
+                                        type="password"
+                                        placeholder="••••••••"
+                                        className="pl-9"
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="confirmPassword"
+                                        type="password"
+                                        placeholder="••••••••"
+                                        className="pl-9"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <Button
+                                type="submit"
+                                className="w-full bg-british-blue hover:bg-british-blue/90"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Updating...
+                                    </>
+                                ) : (
+                                    "Update Password"
+                                )}
+                            </Button>
+                        </form>
+                    )}
                 </CardContent>
+
             </Card>
         </div>
     );

@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, UserPlus, Shield, ShieldAlert, CheckCircle2, XCircle } from "lucide-react";
+import { Search, UserPlus, Shield, ShieldAlert, CheckCircle2, Mail } from "lucide-react";
+
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,8 @@ const EmployeeList = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [authActionLoading, setAuthActionLoading] = useState<string | null>(null);
+
 
     // Form states
     const [selectedRole, setSelectedRole] = useState("employee");
@@ -333,6 +336,38 @@ const EmployeeList = () => {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
+                                                    {emp.auth_id && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            disabled={authActionLoading === emp.id}
+                                                            className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                                                            onClick={async () => {
+                                                                if (!confirm(`Send a password reset link to ${emp.first_name}'s email (${emp.email})?`)) return;
+                                                                try {
+                                                                    setAuthActionLoading(emp.id);
+                                                                    const { error } = await supabase.auth.resetPasswordForEmail(emp.email, {
+                                                                        redirectTo: `${window.location.origin}/employee-login?type=recovery`,
+                                                                    });
+
+                                                                    if (error) throw error;
+
+                                                                    toast({
+                                                                        title: "📧 Reset Link Sent",
+                                                                        description: `A password reset instructions have been sent to ${emp.email}.`,
+                                                                    });
+                                                                } catch (err: any) {
+                                                                    toast({ title: "Error", description: err.message, variant: "destructive" });
+                                                                } finally {
+                                                                    setAuthActionLoading(null);
+                                                                }
+                                                            }}
+                                                        >
+                                                            {authActionLoading === emp.id ? "Sending..." : "📧 Send Reset Link"}
+                                                        </Button>
+                                                    )}
+
+
                                                     <Button variant="ghost" size="sm" onClick={() => openEditModal(emp)}>
                                                         Edit
                                                     </Button>
