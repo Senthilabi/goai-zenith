@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Rocket, Heart, TrendingUp, Lock } from "lucide-react";
+import { Users, Rocket, Heart, TrendingUp, Check, Plus, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -22,7 +24,7 @@ const applicationSchema = z.object({
   portfolio_url: z.string().url("Invalid URL").optional().or(z.literal("")),
   position: z.string().min(1, "Please select a position"),
   university: z.string().min(2, "University name is required"),
-  graduation_year: z.string().regex(/^\d{4}$/, "Please enter a valid year (e.g., 2026)"),
+  graduation_year: z.string().min(4, "Please select a graduation year"),
   skills: z.string().optional(),
   motivation: z.string().min(50, "Please provide at least 50 characters for your motivation"),
   fax_number: z.string().max(0, "Bot detected"), // Honeypot: must be empty
@@ -33,8 +35,28 @@ const Careers = () => {
   const [emailAuth, setEmailAuth] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const { toast } = useToast();
   const { user, loading } = useAuth(); // Auth Check
+
+  const techSkills = [
+    "Software Development", "Data Science", "AI/ML",
+    "Python", "SQL", "React/Frontend", "Backend"
+  ];
+  const nonTechSkills = [
+    "Business Development", "Marketing", "Social Media",
+    "Content Writing", "HR", "Operations", "Graphic Design"
+  ];
+
+  const years = ["Before 2024", "2024", "2025", "2026", "2027", "2028"];
+
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills(prev =>
+      prev.includes(skill)
+        ? prev.filter(s => s !== skill)
+        : [...prev, skill]
+    );
+  };
 
 
   // Pre-fill email if logged in
@@ -42,26 +64,8 @@ const Careers = () => {
     // Optional: Pre-fill logic if needed, but we mainly rely on user check
   }, [user]);
 
-  const handleLogin = async () => {
-    setAuthLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.href,
-        },
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "Google Login Failed",
-        description: error.message || "Please try using the Email Link method instead.",
-        variant: "destructive",
-      });
-    } finally {
-      setAuthLoading(false);
-    }
-  };
+  // Removed Google Auth as per user request to simplify and avoid provider issues
+  // handleLogin (Google) is no longer used
 
   const handleEmailSignIn = async () => {
     if (!emailAuth) {
@@ -129,14 +133,14 @@ const Careers = () => {
       // 2. Data Validation
       const rawData = {
         full_name: formData.get("full_name"),
-        email: user.email, // Always use verified email
+        email: user.email,
         phone: formData.get("phone"),
         linkedin_url: formData.get("linkedin_url"),
         portfolio_url: formData.get("portfolio_url"),
         position: formData.get("position"),
         university: formData.get("university"),
         graduation_year: formData.get("graduation_year"),
-        skills: formData.get("skills"),
+        skills: [...selectedSkills, (formData.get("other_skills") || "")].filter(Boolean).join(", "),
         motivation: formData.get("motivation"),
         fax_number: formData.get("fax_number") || "",
       };
@@ -316,191 +320,240 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
           </Card>
         </div>
 
-        {/* Auth Gate & Form */}
+        {/* Main Application Flow */}
         <div className="max-w-3xl mx-auto">
-          <Card className="shadow-elegant">
-            <CardHeader>
-              <CardTitle className="text-2xl">Internship Application</CardTitle>
-              <CardDescription>
-                {user ? (
-                  <span>Applying as <strong>{user.email}</strong></span>
-                ) : (
-                  <span>Sign in required to verify your application</span>
-                )}
+          <Card className="shadow-elegant border-none bg-white/80 backdrop-blur-md">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-british-blue to-primary bg-clip-text text-transparent">
+                {user ? "Complete Your Application" : "Start Your Journey"}
+              </CardTitle>
+              <CardDescription className="text-base mt-2">
+                {user
+                  ? "Tell us more about your background and passion."
+                  : "Enter your email to receive a secure application link."
+                }
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-
-                {/* HONEYPOT FIELD (Hidden) */}
-                <div className="hidden" aria-hidden="true">
-                  <label htmlFor="fax_number">Fax Number</label>
-                  <input type="text" name="fax_number" id="fax_number" tabIndex={-1} autoComplete="off" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="full_name">Full Name *</Label>
-                    <Input id="full_name" name="full_name" required placeholder="John Doe" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email {user && "(Verified)"}</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      value={user?.email || ""}
-                      disabled
-                      placeholder={user ? "" : "Sign in to verify this field"}
-                      className={user ? "bg-muted" : ""}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input id="phone" name="phone" type="tel" required placeholder="+91 98765 43210" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="position">Preferred Position *</Label>
-                    <Select name="position" required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a position" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="software-engineering">Software Engineering</SelectItem>
-                        <SelectItem value="product-management">Product Management</SelectItem>
-                        <SelectItem value="data-science">Data Science & AI</SelectItem>
-                        <SelectItem value="business-development">Business Development</SelectItem>
-                        <SelectItem value="marketing">Marketing & Communications</SelectItem>
-                        <SelectItem value="design">UI/UX Design</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Social Media Links */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="linkedin_url">LinkedIn Profile *</Label>
-                    <Input id="linkedin_url" name="linkedin_url" required placeholder="https://linkedin.com/in/..." />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="portfolio_url">Portfolio/GitHub/Website</Label>
-                    <Input id="portfolio_url" name="portfolio_url" placeholder="https://..." />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="university">University/College *</Label>
-                    <Input id="university" name="university" required placeholder="Your institution" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="graduation_year">Expected Graduation *</Label>
-                    <Input id="graduation_year" name="graduation_year" required placeholder="e.g., 2026" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="skills">Relevant Skills & Experience</Label>
-                  <Textarea
-                    id="skills"
-                    name="skills"
-                    placeholder="Tell us about your skills, projects, and experience..."
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="motivation">Why do you want to join GoAi? *</Label>
-                  <Textarea
-                    id="motivation"
-                    name="motivation"
-                    required
-                    placeholder="Share your motivation and what you hope to learn... (Min 50 chars)"
-                    rows={4}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="resume">Resume/CV * (PDF, DOC, DOCX - Max 5MB)</Label>
-                  <input
-                    id="resume"
-                    name="resume"
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Upload your resume in PDF or Word format
-                  </p>
-                </div>
-
-                {user ? (
-                  <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting..." : "Submit Application"}
-                  </Button>
-                ) : (
-                  <div className="space-y-6 pt-4">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
+            <CardContent className="pt-6">
+              {!user ? (
+                <div className="space-y-6 py-4">
+                  {!otpSent ? (
+                    <div className="max-w-md mx-auto space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email-auth">Email Address</Label>
+                        <Input
+                          id="email-auth"
+                          type="email"
+                          placeholder="name@example.com"
+                          value={emailAuth}
+                          onChange={(e) => setEmailAuth(e.target.value)}
+                          className="h-12 text-lg"
+                        />
                       </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">Sign in to verify & apply</span>
+                      <Button
+                        type="button"
+                        onClick={handleEmailSignIn}
+                        className="w-full h-12 text-lg bg-british-blue hover:bg-british-blue/90 text-white transition-all shadow-md"
+                        disabled={authLoading}
+                      >
+                        {authLoading ? "Sending link..." : "Verify Email & Proceed"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center p-8 bg-blue-50/50 rounded-2xl border border-blue-100 animate-in fade-in zoom-in-95">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Check className="w-8 h-8 text-blue-600" />
                       </div>
+                      <h4 className="font-bold text-xl text-blue-900 mb-2">Check your email!</h4>
+                      <p className="text-lg text-blue-700 leading-relaxed mb-6">
+                        We've sent a magic link to <br /><strong>{emailAuth}</strong>.<br />
+                        Click it to unlock the application form.
+                      </p>
+                      <Button
+                        variant="ghost"
+                        className="text-blue-600 hover:text-blue-800 hover:bg-blue-100/50"
+                        onClick={() => setOtpSent(false)}
+                      >
+                        Use a different email
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">Full Name *</Label>
+                      <Input id="full_name" name="full_name" required placeholder="Ex: Senthil Kumar" className="h-11" />
                     </div>
 
-                    {!otpSent ? (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="email-auth">Work/Personal Email</Label>
-                          <Input
-                            id="email-auth"
-                            type="email"
-                            placeholder="name@example.com"
-                            value={emailAuth}
-                            onChange={(e) => setEmailAuth(e.target.value)}
-                            required
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={handleEmailSignIn}
-                          className="w-full bg-british-blue hover:bg-british-blue/90 text-white"
-                          disabled={authLoading}
-                        >
-                          {authLoading ? "Sending..." : "Send Magic Link to Email"}
-                        </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email (Verified)</Label>
+                      <div className="relative">
+                        <Input
+                          id="email"
+                          name="email"
+                          value={user?.email || ""}
+                          disabled
+                          className="h-11 bg-slate-50 border-emerald-100 text-emerald-700 font-medium cursor-not-allowed pr-10"
+                        />
+                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
                       </div>
-                    ) : (
-                      <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in zoom-in-95">
-                        <h4 className="font-semibold text-blue-900 mb-1">Check your inbox!</h4>
-                        <p className="text-sm text-blue-700">
-                          We've sent a magic link to <strong>{emailAuth}</strong>.
-                          Click the link in the email to automatically verify and continue your application.
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="mt-4 text-blue-600 hover:text-blue-800"
-                          onClick={() => setOtpSent(false)}
-                        >
-                          Use a different email
-                        </Button>
-                      </div>
-                    )}
+                    </div>
                   </div>
-                )}
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number *</Label>
+                      <Input id="phone" name="phone" type="tel" required placeholder="+91 98765 43210" className="h-11" />
+                    </div>
 
-              </form>
+                    <div className="space-y-2">
+                      <Label htmlFor="position">Preferred Role *</Label>
+                      <Select name="position" required>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select your interest" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="software-engineering">Software Engineering</SelectItem>
+                          <SelectItem value="product-management">Product Management</SelectItem>
+                          <SelectItem value="data-science">Data Science & AI</SelectItem>
+                          <SelectItem value="business-development">Business Development</SelectItem>
+                          <SelectItem value="marketing">Marketing & Communications</SelectItem>
+                          <SelectItem value="design">UI/UX Design</SelectItem>
+                          <SelectItem value="hr-operations">HR & Operations</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Social & Education */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin_url">LinkedIn Profile *</Label>
+                      <Input id="linkedin_url" name="linkedin_url" required placeholder="https://..." className="h-11" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="portfolio_url">Portfolio/GitHub/Website</Label>
+                      <Input id="portfolio_url" name="portfolio_url" placeholder="https://..." className="h-11" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <Label htmlFor="university">University/College *</Label>
+                      <Input id="university" name="university" required placeholder="Institution Name" className="h-11" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="graduation_year">Year of Graduation *</Label>
+                      <Select name="graduation_year" required>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map(year => (
+                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Skills Section */}
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">Relevant Skills & Experience</Label>
+
+                    <div className="space-y-4 border rounded-xl p-5 bg-slate-50/50">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Technical Skills</p>
+                        <div className="flex flex-wrap gap-2">
+                          {techSkills.map(skill => (
+                            <Badge
+                              key={skill}
+                              variant="outline"
+                              className={cn(
+                                "cursor-pointer py-1.5 px-3 transition-all",
+                                selectedSkills.includes(skill)
+                                  ? "bg-british-blue text-white border-british-blue shadow-sm"
+                                  : "bg-white hover:border-british-blue/50"
+                              )}
+                              onClick={() => toggleSkill(skill)}
+                            >
+                              {selectedSkills.includes(skill) && <Check className="w-3 h-3 mr-1" />}
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Non-Technical Skills</p>
+                        <div className="flex flex-wrap gap-2">
+                          {nonTechSkills.map(skill => (
+                            <Badge
+                              key={skill}
+                              variant="outline"
+                              className={cn(
+                                "cursor-pointer py-1.5 px-3 transition-all",
+                                selectedSkills.includes(skill)
+                                  ? "bg-secondary text-white border-secondary shadow-sm"
+                                  : "bg-white hover:border-secondary/50"
+                              )}
+                              onClick={() => toggleSkill(skill)}
+                            >
+                              {selectedSkills.includes(skill) && <Check className="w-3 h-3 mr-1" />}
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-4">
+                        <Label htmlFor="other_skills" className="text-xs text-muted-foreground">Other specific skills?</Label>
+                        <Input id="other_skills" name="other_skills" placeholder="Add any other relevant skills..." className="mt-1 h-9 bg-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label htmlFor="motivation">Why GoAi? * (Min 50 chars)</Label>
+                    <Textarea
+                      id="motivation"
+                      name="motivation"
+                      required
+                      placeholder="What drives you to join our mission? What do you hope to achieve?"
+                      rows={4}
+                      className="resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label htmlFor="resume">Resume / CV * (PDF, Word - Max 5MB)</Label>
+                    <div className="group relative">
+                      <input
+                        id="resume"
+                        name="resume"
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        required
+                        className="flex h-12 w-full rounded-xl border border-dashed border-slate-300 bg-slate-50/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-british-blue file:text-white file:rounded-lg file:px-4 file:py-1 file:text-xs file:font-medium hover:bg-slate-50 transition-all cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="hero"
+                    size="lg"
+                    className="w-full h-14 text-lg shadow-xl hover:translate-y-[-2px] transition-transform"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting Application..." : "Submit Official Application"}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
