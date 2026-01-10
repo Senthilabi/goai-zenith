@@ -30,8 +30,12 @@ const applicationSchema = z.object({
 
 const Careers = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailAuth, setEmailAuth] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const { toast } = useToast();
   const { user, loading } = useAuth(); // Auth Check
+
 
   // Pre-fill email if logged in
   useEffect(() => {
@@ -39,13 +43,57 @@ const Careers = () => {
   }, [user]);
 
   const handleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.href,
-      },
-    });
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.href,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Google Login Failed",
+        description: error.message || "Please try using the Email Link method instead.",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
   };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailAuth) return;
+
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: emailAuth,
+        options: {
+          emailRedirectTo: window.location.href,
+        },
+      });
+
+      if (error) throw error;
+
+      setOtpSent(true);
+      toast({
+        title: "Magic Link Sent!",
+        description: "Please check your email and click the link to verify your application.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to send link",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -393,10 +441,78 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
                     {isSubmitting ? "Submitting..." : "Submit Application"}
                   </Button>
                 ) : (
-                  <Button type="button" onClick={handleLogin} variant="hero" size="lg" className="w-full flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" /> Sign in with Google to Apply
-                  </Button>
+                  <div className="space-y-6 pt-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">Sign in to verify & apply</span>
+                      </div>
+                    </div>
+
+                    {!otpSent ? (
+                      <form onSubmit={handleEmailSignIn} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email-auth">Work/Personal Email</Label>
+                          <Input
+                            id="email-auth"
+                            type="email"
+                            placeholder="name@example.com"
+                            value={emailAuth}
+                            onChange={(e) => setEmailAuth(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          className="w-full bg-british-blue hover:bg-british-blue/90 text-white"
+                          disabled={authLoading}
+                        >
+                          {authLoading ? "Sending..." : "Send Magic Link to Email"}
+                        </Button>
+                      </form>
+                    ) : (
+                      <div className="text-center p-6 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in zoom-in-95">
+                        <h4 className="font-semibold text-blue-900 mb-1">Check your inbox!</h4>
+                        <p className="text-sm text-blue-700">
+                          We've sent a magic link to <strong>{emailAuth}</strong>.
+                          Click the link in the email to automatically verify and continue your application.
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-4 text-blue-600 hover:text-blue-800"
+                          onClick={() => setOtpSent(false)}
+                        >
+                          Use a different email
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">Or</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={handleLogin}
+                      variant="outline"
+                      size="lg"
+                      className="w-full flex items-center justify-center gap-2 border-slate-200"
+                      disabled={authLoading}
+                    >
+                      <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
+                      Sign in with Google
+                    </Button>
+                  </div>
                 )}
+
 
               </form>
             </CardContent>
