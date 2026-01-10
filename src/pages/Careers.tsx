@@ -64,8 +64,47 @@ const Careers = () => {
     // Optional: Pre-fill logic if needed, but we mainly rely on user check
   }, [user]);
 
-  // Removed Google Auth as per user request to simplify and avoid provider issues
-  // handleLogin (Google) is no longer used
+  const handleGoogleLogin = async () => {
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + window.location.pathname,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Google Login Failed",
+        description: error.message || "Please try using the Email Link method instead.",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLinkedInLogin = async () => {
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'linkedin_oidc', // Using OpenID Connect which is the modern standard
+        options: {
+          redirectTo: window.location.origin + window.location.pathname,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "LinkedIn Login Failed",
+        description: error.message || "Please try using the Email Link method instead.",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const handleEmailSignIn = async () => {
     if (!emailAuth) {
@@ -78,7 +117,7 @@ const Careers = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email: emailAuth,
         options: {
-          emailRedirectTo: window.location.href,
+          emailRedirectTo: window.location.origin + window.location.pathname,
         },
       });
 
@@ -325,12 +364,12 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
           <Card className="shadow-elegant border-none bg-white/80 backdrop-blur-md">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-3xl font-bold bg-gradient-to-r from-british-blue to-primary bg-clip-text text-transparent">
-                {user ? "Complete Your Application" : "Start Your Journey"}
+                {user ? "Complete Your Application" : "Register yourself to apply"}
               </CardTitle>
               <CardDescription className="text-base mt-2">
                 {user
                   ? "Tell us more about your background and passion."
-                  : "Enter your email to receive a secure application link."
+                  : "Verify your identity to proceed with the application."
                 }
               </CardDescription>
             </CardHeader>
@@ -338,26 +377,64 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
               {!user ? (
                 <div className="space-y-6 py-4">
                   {!otpSent ? (
-                    <div className="max-w-md mx-auto space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="email-auth">Email Address</Label>
-                        <Input
-                          id="email-auth"
-                          type="email"
-                          placeholder="name@example.com"
-                          value={emailAuth}
-                          onChange={(e) => setEmailAuth(e.target.value)}
-                          className="h-12 text-lg"
-                        />
+                    <div className="max-w-md mx-auto space-y-6">
+                      <div className="grid grid-cols-1 gap-4">
+                        <Button
+                          type="button"
+                          onClick={handleGoogleLogin}
+                          variant="outline"
+                          size="lg"
+                          className="w-full flex items-center justify-center gap-3 border-slate-200 h-14 text-base font-semibold hover:bg-slate-50"
+                          disabled={authLoading}
+                        >
+                          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+                          Sign in with Google
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleLinkedInLogin}
+                          variant="outline"
+                          size="lg"
+                          className="w-full flex items-center justify-center gap-3 border-slate-200 h-14 text-base font-semibold hover:bg-slate-50"
+                          disabled={authLoading}
+                        >
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" alt="LinkedIn" className="w-5 h-5" />
+                          Sign in with LinkedIn
+                        </Button>
                       </div>
-                      <Button
-                        type="button"
-                        onClick={handleEmailSignIn}
-                        className="w-full h-12 text-lg bg-british-blue hover:bg-british-blue/90 text-white transition-all shadow-md"
-                        disabled={authLoading}
-                      >
-                        {authLoading ? "Sending link..." : "Verify Email & Proceed"}
-                      </Button>
+
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-white px-2 text-muted-foreground">Or</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email-auth">Enter your email</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="email-auth"
+                              type="email"
+                              placeholder="name@example.com"
+                              value={emailAuth}
+                              onChange={(e) => setEmailAuth(e.target.value)}
+                              className="h-12 text-lg"
+                            />
+                            <Button
+                              type="button"
+                              onClick={handleEmailSignIn}
+                              className="h-12 px-8 bg-british-blue hover:bg-british-blue/90 text-white transition-all shadow-md font-semibold"
+                              disabled={authLoading}
+                            >
+                              {authLoading ? "Submitting..." : "Submit"}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center p-8 bg-blue-50/50 rounded-2xl border border-blue-100 animate-in fade-in zoom-in-95">
@@ -447,7 +524,7 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="graduation_year">Year of Graduation *</Label>
+                      <Label htmlFor="graduation_year">Anticipated Graduation Date *</Label>
                       <Select name="graduation_year" required>
                         <SelectTrigger className="h-11">
                           <SelectValue placeholder="Select year" />
@@ -463,7 +540,7 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
 
                   {/* Skills Section */}
                   <div className="space-y-4">
-                    <Label className="text-base font-semibold">Relevant Skills & Experience</Label>
+                    <Label className="text-base font-semibold">Professional Competencies</Label>
 
                     <div className="space-y-4 border rounded-xl p-5 bg-slate-50/50">
                       <div>
@@ -550,7 +627,7 @@ View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
                     className="w-full h-14 text-lg shadow-xl hover:translate-y-[-2px] transition-transform"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Submitting Application..." : "Submit Official Application"}
+                    {isSubmitting ? "Submitting Application..." : "Finalize & Submit Application"}
                   </Button>
                 </form>
               )}
