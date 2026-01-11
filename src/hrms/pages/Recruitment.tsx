@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -17,19 +18,42 @@ import { format } from "date-fns";
 
 const Recruitment = () => {
     const { toast } = useToast();
+    const { user } = useAuth();
     const [applications, setApplications] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [selectedApp, setSelectedApp] = useState<any | null>(null);
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
     // Notes/Status Update State
     const [notes, setNotes] = useState("");
     const [newStatus, setNewStatus] = useState("");
 
     useEffect(() => {
-        fetchApplications();
-    }, []);
+        const checkAccess = async () => {
+            if (!user) return;
+            try {
+                const { data, error } = await supabase
+                    .from('hrms_employees')
+                    .select('hrms_role')
+                    .eq('auth_id', user.id)
+                    .single();
+
+                if (error || !data) {
+                    setIsAuthorized(false);
+                } else {
+                    const hasAccess = data.hrms_role === 'super_admin' || data.hrms_role === 'hr_admin';
+                    setIsAuthorized(hasAccess);
+                    if (hasAccess) fetchApplications();
+                }
+            } catch (err) {
+                setIsAuthorized(false);
+            }
+        };
+
+        checkAccess();
+    }, [user]);
 
     const fetchApplications = async () => {
         try {
@@ -258,7 +282,22 @@ const Recruitment = () => {
         hired: applications.filter(a => a.status === 'hired').length,
     };
 
-    if (loading) return <div className="p-8 text-center">Loading applications...</div>;
+    if (isAuthorized === false) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center h-[60vh]">
+                <div className="bg-red-50 p-6 rounded-2xl border border-red-100 max-w-md">
+                    <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-slate-900 mb-2">Access Denied</h2>
+                    <p className="text-slate-600">
+                        You do not have the required permissions to view recruitment data.
+                        Please contact your administrator to request an "HR Admin" role.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (loading || isAuthorized === null) return <div className="p-8 text-center">Loading applications...</div>;
 
     return (
         <div className="space-y-6">

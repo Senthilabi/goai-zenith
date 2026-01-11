@@ -251,22 +251,43 @@ const Careers = () => {
 
       // Send email notification (Background)
       console.log("Sending email notification...");
+
+      // Fetch HR/Admin emails to include in notify message or CC
+      const { data: adminUsers } = await supabase
+        .from('hrms_employees')
+        .select('email, first_name')
+        .in('hrms_role', ['super_admin', 'hr_admin']);
+
+      const adminEmailList = adminUsers?.map(a => a.email).join(', ') || "Hello@go-aitech.com";
+
       fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           access_key: "eefdb10e-f591-4963-9a67-e45f0d8afda3",
-          subject: "New Internship Application - GoAi Technologies",
-          from_name: dbData.full_name,
-          email: "Hello@go-aitech.com",
+          subject: `NEW Application: ${dbData.full_name} for ${dbData.position}`,
+          from_name: "GoAi Recruitment System",
+          email: "Hello@go-aitech.com", // Keeping this as primary
+          cc: adminEmailList, // Attempting to CC all admins
           message: `
-New Application: ${dbData.full_name}
+A new candidate has registered and submitted an application.
+
+CANDIDATE DETAILS:
+-----------------
+Name: ${dbData.full_name}
 Email: ${dbData.email} (Verified)
 Position: ${dbData.position}
-LinkedIn: ${dbData.linkedin_url}
-Portfolio: ${dbData.portfolio_url || 'N/A'}
+University: ${dbData.university} (${dbData.graduation_year})
+Skills: ${dbData.skills}
 
-View Full Application in HRMS: ${window.location.origin}/hrms/recruitment
+This candidate is now available for review in the HRMS Recruitment Portal.
+
+SYSTEM NOTIFICATION:
+-------------------
+The following HR/Admins have been notified: ${adminEmailList}
+
+VIEW APPLICATION:
+${window.location.origin}/hrms/recruitment
           `.trim()
         })
       });
