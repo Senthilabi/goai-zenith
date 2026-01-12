@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useToast } from "@/hooks/use-toast";
 import {
     Search, Filter, Download, UserPlus, FileText,
-    Linkedin, Globe, GraduationCap, Mail, Phone, Rocket, Eye
+    Linkedin, Globe, GraduationCap, Mail, Phone, Rocket, Eye,
+    ShieldAlert, CheckCircle2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -158,21 +159,26 @@ Email: hello@go-aitech.com
 
             console.log("Sending invite to:", schedulingApp.email);
 
-            // Send via Web3Forms (Using the same key as Careers)
-            const response = await fetch("https://api.web3forms.com/submit", {
+            // Send via Resend
+            const response = await fetch("https://api.resend.com/emails", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer re_YC92VE35_HxigWiCd9CzNbiEX6mMAeYZ5`
+                },
                 body: JSON.stringify({
-                    access_key: "eefdb10e-f591-4963-9a67-e45f0d8afda3",
+                    from: "GoAI Technologies <onboarding@resend.dev>",
+                    to: [schedulingApp.email],
                     subject: subject,
-                    from_name: "GoAi Recruitment",
-                    name: "GoAi Technologies",
-                    email: "hello@go-aitech.com",
-                    to_email: schedulingApp.email, // Candidate
-                    replyto: "hello@go-aitech.com",
-                    message: message
+                    text: message,
+                    // If you wanted HTML, you'd use 'html' instead of 'text'
                 })
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Failed to send email via Resend");
+            }
 
             toast({
                 title: "Interview Invite Sent!",
