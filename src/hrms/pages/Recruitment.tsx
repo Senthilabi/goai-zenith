@@ -192,7 +192,7 @@ const Recruitment = () => {
             fetchApplications();
         } catch (error: any) {
             toast({
-                title: "Email Failed [v2.1]",
+                title: "Email Failed [v2.3]",
                 description: error.message,
                 variant: "destructive",
                 duration: 8000
@@ -782,13 +782,6 @@ const Recruitment = () => {
                                 value={interviewData.interviewer}
                                 onChange={(e) => setInterviewData({ ...interviewData, interviewer: e.target.value })}
                             />
-                        </div>
-
-                        <div className="bg-amber-50 border border-amber-100 p-3 rounded-md text-[11px] text-amber-800 flex gap-2">
-                            <ShieldAlert className="h-4 w-4 shrink-0" />
-                            <div>
-                                <strong>Tester Note:</strong> Resend Sandbox only sends to your registered email. If sending fails, use "Copy Info" to send manually.
-                            </div>
                         </div>
 
                         <div className="pt-2 flex gap-3">
