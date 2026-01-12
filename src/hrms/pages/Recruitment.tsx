@@ -158,29 +158,25 @@ const Recruitment = () => {
                 </div>
             `;
 
-            console.log("Sending invite to:", schedulingApp.email);
+            console.log("Sending invite via Supabase RPC to:", schedulingApp.email);
 
-            // Send via Resend
-            const response = await fetch("https://api.resend.com/emails", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer re_YC92VE35_HxigWiCd9CzNbiEX6mMAeYZ5`
-                },
-                body: JSON.stringify({
-                    from: "GoAI Recruitment <onboarding@resend.dev>",
-                    to: [schedulingApp.email],
-                    subject: subject,
-                    html: htmlMessage,
-                })
+            // Call the database function (RPC) we just created
+            const { data: rpcResponse, error: rpcError } = await supabase.rpc('send_interview_invite', {
+                recipient_email: schedulingApp.email,
+                email_subject: subject,
+                email_html: htmlMessage
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Resend API Error:", errorData);
-                let msg = errorData.message || (errorData.detail ? JSON.stringify(errorData.detail) : "Failed to send email");
+            if (rpcError) {
+                console.error("RPC Error:", rpcError);
+                throw new Error("Database failed to process email. Please ensure you ran the SQL script.");
+            }
+
+            // Check if Resend returned an error inside the response
+            if (rpcResponse && (rpcResponse.statusCode >= 400 || rpcResponse.error)) {
+                let msg = rpcResponse.message || "Failed to send email via Resend Service.";
                 if (msg.includes("Single Recipient")) {
-                    msg = "Resend Sandbox Mode: Direct emails only work to your registered Zoho email. Please verify your domain in Resend to send to anyone!";
+                    msg = "Resend Sandbox Mode: Direct emails only work to your registered Zoho email. Verify your domain in Resend to send to anyone!";
                 }
                 throw new Error(msg);
             }
