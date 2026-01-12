@@ -253,8 +253,7 @@ const Careers = () => {
       console.log("Attempting to save to database...");
       const { data: savedData, error: dbError } = await supabase
         .from("internship_applications")
-        .insert([dbData])
-        .select();
+        .insert([dbData]);
 
       if (dbError) {
         console.error("❌ Database error:", dbError);
