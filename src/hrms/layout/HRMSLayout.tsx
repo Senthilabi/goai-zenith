@@ -8,7 +8,8 @@ import {
     Briefcase,
     Menu,
     X,
-    LogOut
+    LogOut,
+    User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +23,7 @@ const HRMSLayout = () => {
 
     const navItems = [
         { name: "Dashboard", path: "/hrms/dashboard", icon: LayoutDashboard },
+        { name: "My Profile", path: "/hrms/profile", icon: User },
         { name: "Employees", path: "/hrms/employees", icon: Users },
         { name: "Attendance", path: "/hrms/attendance", icon: Clock },
         { name: "Leave Mgmt", path: "/hrms/leaves", icon: Calendar },

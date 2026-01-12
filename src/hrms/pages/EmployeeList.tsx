@@ -32,6 +32,7 @@ const EmployeeList = () => {
     // Form states
     const [selectedRole, setSelectedRole] = useState("employee");
     const [selectedDepartment, setSelectedDepartment] = useState("");
+    const [selectedGender, setSelectedGender] = useState("");
 
     useEffect(() => {
         fetchEmployees();
@@ -68,6 +69,8 @@ const EmployeeList = () => {
             first_name: formData.get("first_name"),
             last_name: formData.get("last_name"),
             email: formData.get("email"),
+            phone_number: formData.get("phone_number"),
+            gender: selectedGender,
             employee_code: formData.get("employee_code"),
             department: formData.get("department"),
             designation: formData.get("designation"),
@@ -104,6 +107,7 @@ const EmployeeList = () => {
         setEditingId(employee.id);
         setSelectedRole(employee.hrms_role || "employee");
         setSelectedDepartment(employee.department || "");
+        setSelectedGender(employee.gender || "");
         setIsAddOpen(true);
     };
 
@@ -137,12 +141,14 @@ const EmployeeList = () => {
                     if (!open) {
                         setEditingId(null);
                         setSelectedRole("employee");
+                        setSelectedGender("");
                     }
                 }}>
                     <DialogTrigger asChild>
                         <Button className="gap-2" onClick={() => {
                             setEditingId(null);
                             setSelectedRole("employee");
+                            setSelectedGender("");
                         }}>
                             <UserPlus className="h-4 w-4" /> Add Employee
                         </Button>
@@ -173,15 +179,26 @@ const EmployeeList = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
-                                <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    defaultValue={currentEmployee?.email || ''}
-                                    required
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email Address</Label>
+                                    <Input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        defaultValue={currentEmployee?.email || ''}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="phone_number">Phone Number</Label>
+                                    <Input
+                                        id="phone_number"
+                                        name="phone_number"
+                                        placeholder="+91..."
+                                        defaultValue={currentEmployee?.phone_number || ''}
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -209,6 +226,19 @@ const EmployeeList = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
+                                    <Label htmlFor="gender">Gender</Label>
+                                    <Select value={selectedGender} onValueChange={setSelectedGender}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Male">Male</SelectItem>
+                                            <SelectItem value="Female">Female</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
                                     <Label htmlFor="department">Department</Label>
                                     <Input
                                         id="department"
@@ -217,6 +247,8 @@ const EmployeeList = () => {
                                         defaultValue={currentEmployee?.department || ''}
                                     />
                                 </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="designation">Designation</Label>
                                     <Input
@@ -226,25 +258,25 @@ const EmployeeList = () => {
                                         defaultValue={currentEmployee?.designation || ''}
                                     />
                                 </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="role">System Role</Label>
+                                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="employee">Employee (Standard Access)</SelectItem>
+                                            <SelectItem value="team_manager">Team Manager (Can view team)</SelectItem>
+                                            <SelectItem value="hr_admin">HR Admin (Full HRMS Access)</SelectItem>
+                                            <SelectItem value="super_admin">Super Admin (Full System Access)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="role">System Role</Label>
-                                <Select value={selectedRole} onValueChange={setSelectedRole}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="employee">Employee (Standard Access)</SelectItem>
-                                        <SelectItem value="team_manager">Team Manager (Can view team)</SelectItem>
-                                        <SelectItem value="hr_admin">HR Admin (Full HRMS Access)</SelectItem>
-                                        <SelectItem value="super_admin">Super Admin (Full System Access)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-xs text-muted-foreground">
-                                    Determines what data this user can access in the portal.
-                                </p>
-                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Determines what data this user can access in the portal.
+                            </p>
 
                             <Button type="submit" className="w-full">
                                 {editingId ? "Update Employee" : "Create Employee Record"}

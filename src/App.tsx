@@ -29,6 +29,7 @@ import Recruitment from "./hrms/pages/Recruitment";
 import TaskBoard from "./hrms/pages/TaskBoard";
 
 import OnboardingWizard from "./hrms/pages/OnboardingWizard";
+import Profile from "./hrms/pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
             }>
               <Route index element={<Navigate to="/hrms/dashboard" replace />} />
               <Route path="dashboard" element={<HRMSDashboard />} />
+              <Route path="profile" element={<Profile />} />
               <Route path="employees" element={<EmployeeList />} />
               <Route path="attendance" element={<AttendanceView />} />
               <Route path="leaves" element={<LeaveManager />} />
