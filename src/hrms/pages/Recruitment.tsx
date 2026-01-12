@@ -177,7 +177,12 @@ const Recruitment = () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || "Failed to send email via Resend");
+                console.error("Resend API Error:", errorData);
+                let msg = errorData.message || (errorData.detail ? JSON.stringify(errorData.detail) : "Failed to send email");
+                if (msg.includes("Single Recipient")) {
+                    msg = "Resend Sandbox Mode: Direct emails only work to your registered Zoho email. Please verify your domain in Resend to send to anyone!";
+                }
+                throw new Error(msg);
             }
 
             toast({
@@ -188,9 +193,22 @@ const Recruitment = () => {
             // Update status to interview_scheduled
             await updateStatus(schedulingApp.id, 'interview_scheduled');
             setIsScheduleDialogOpen(false);
+            fetchApplications();
         } catch (error: any) {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+            toast({
+                title: "Email Failed",
+                description: error.message,
+                variant: "destructive",
+                duration: 8000
+            });
         }
+    };
+
+    const copyInviteToClipboard = () => {
+        if (!schedulingApp) return;
+        const text = `Dear ${schedulingApp.full_name},\n\nJoin us for an interview at GoAI Technologies.\n\nPosition: ${schedulingApp.position}\nDate: ${interviewData.date}\nTime: ${interviewData.time}\nLink/Location: ${interviewData.location}\n\nRegards,\nHR Team`;
+        navigator.clipboard.writeText(text);
+        toast({ title: "Copied!", description: "Invitation text copied to clipboard." });
     };
 
     const handleMarkInterviewed = async (appId: string) => {
@@ -770,9 +788,18 @@ const Recruitment = () => {
                             />
                         </div>
 
-                        <div className="pt-4 flex gap-3">
-                            <Button variant="outline" className="flex-1" onClick={() => setIsScheduleDialogOpen(false)}>Cancel</Button>
-                            <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={handleSendInterviewInvite}>
+                        <div className="bg-amber-50 border border-amber-100 p-3 rounded-md text-[11px] text-amber-800 flex gap-2">
+                            <ShieldAlert className="h-4 w-4 shrink-0" />
+                            <div>
+                                <strong>Tester Note:</strong> Resend Sandbox only sends to your registered email. If sending fails, use "Copy Info" to send manually.
+                            </div>
+                        </div>
+
+                        <div className="pt-2 flex gap-3">
+                            <Button variant="outline" className="flex-1 gap-2" onClick={copyInviteToClipboard}>
+                                <FileText className="h-4 w-4" /> Copy Info
+                            </Button>
+                            <Button className="flex-[2] bg-blue-600 hover:bg-blue-700" onClick={handleSendInterviewInvite}>
                                 <Mail className="w-4 h-4 mr-2" /> Confirm & Send
                             </Button>
                         </div>
