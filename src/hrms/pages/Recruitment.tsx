@@ -124,38 +124,39 @@ const Recruitment = () => {
         try {
             // Updated Subject & Body according to user's draft
             const subject = `Interview Schedule – ${schedulingApp.position}`;
-            const message = `
-GOAI TECHNOLOGIES PVT LTD
-[Company Address Line 1, Line 2]
-Email: hello@go-aitech.com | Website: www.go-aitech.com
---------------------------------------------------
+            const htmlMessage = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                    <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #3b82f6;">
+                        <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
+                        <p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">Official Interview Invitation</p>
+                    </div>
+                    <div style="padding: 32px; color: #334155; line-height: 1.6;">
+                        <p>Dear <strong>${schedulingApp.full_name}</strong>,</p>
+                        <p>Thank you for your interest in joining <strong>GoAI Technologies</strong>. We have carefully reviewed your profile and are pleased to invite you for an interview for the <strong>${schedulingApp.position}</strong> role.</p>
+                        
+                        <div style="background-color: #eff6ff; padding: 20px; border-radius: 6px; margin: 24px 0;">
+                            <h3 style="margin: 0 0 12px; color: #1d4ed8; font-size: 16px;">Schedule Details</h3>
+                            <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                                <tr><td style="padding: 4px 0; color: #64748b; width: 140px;">Interview Date:</td><td style="padding: 4px 0; font-weight: 600;">${interviewData.date}</td></tr>
+                                <tr><td style="padding: 4px 0; color: #64748b;">Interview Time:</td><td style="padding: 4px 0; font-weight: 600;">${interviewData.time}</td></tr>
+                                <tr><td style="padding: 4px 0; color: #64748b;">Mode:</td><td style="padding: 4px 0; font-weight: 600;">${interviewData.mode}</td></tr>
+                                <tr><td style="padding: 4px 0; color: #64748b;">Interviewer(s):</td><td style="padding: 4px 0; font-weight: 600;">${interviewData.interviewer}</td></tr>
+                            </table>
+                        </div>
 
-Subject: ${subject}
+                        <p style="margin-bottom: 24px;">Please click the button below to join the interview or view details:</p>
+                        
+                        <a href="${interviewData.location}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Join Interview / Open Link</a>
 
-Dear ${schedulingApp.full_name},
-
-Date: ${new Date().toLocaleDateString()}
-
-Thank you for your interest in opportunities with GoAI Technologies Pvt Ltd. Based on your profile, we are pleased to invite you for an interview as per the details below.
-
-Position / Role: ${schedulingApp.position}
-Interview Date: ${interviewData.date}
-Interview Time: ${interviewData.time}
-Interview Mode: ${interviewData.mode}
-Interview Location / Link: ${interviewData.location}
-Interviewer(s): ${interviewData.interviewer}
-
-Please ensure your availability at the scheduled time. If you are unable to attend, kindly inform us in advance for rescheduling.
-
-For online interviews, ensure a stable internet connection and a quiet environment.
-
-We look forward to interacting with you.
-
-Warm regards,
-HR Team
-GoAI Technologies Pvt Ltd
-Email: hello@go-aitech.com
-            `.trim();
+                        <p style="margin-top: 32px; font-size: 14px;"><strong>Preparation Notes:</strong><br/>
+                        For online interviews, please ensure a stable internet connection and a quiet environment. If you need to reschedule, please let us know at least 24 hours in advance.</p>
+                    </div>
+                    <div style="background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 12px;">
+                        <p style="margin: 0;">&copy; ${new Date().getFullYear()} GoAI Technologies Pvt Ltd</p>
+                        <p style="margin: 4px 0;">Email: hello@go-aitech.com | Website: www.go-aitech.com</p>
+                    </div>
+                </div>
+            `;
 
             console.log("Sending invite to:", schedulingApp.email);
 
@@ -167,11 +168,10 @@ Email: hello@go-aitech.com
                     "Authorization": `Bearer re_YC92VE35_HxigWiCd9CzNbiEX6mMAeYZ5`
                 },
                 body: JSON.stringify({
-                    from: "GoAI Technologies <onboarding@resend.dev>",
+                    from: "GoAI Recruitment <onboarding@resend.dev>",
                     to: [schedulingApp.email],
                     subject: subject,
-                    text: message,
-                    // If you wanted HTML, you'd use 'html' instead of 'text'
+                    html: htmlMessage,
                 })
             });
 
