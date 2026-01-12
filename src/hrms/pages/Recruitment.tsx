@@ -127,7 +127,7 @@ const Recruitment = () => {
             const htmlMessage = `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
                     <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #3b82f6;">
-                        <img src="${window.location.origin}/logo.png" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
+                        <img src="${window.location.origin.includes('localhost') ? 'https://go-aitech.com/logo.png' : window.location.origin + '/logo.png'}" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
                         <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
                         <p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">Official Interview Invitation</p>
                     </div>
@@ -232,7 +232,7 @@ const Recruitment = () => {
                 const htmlMessage = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
                         <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #22c55e;">
-                            <img src="${window.location.origin}/logo.png" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
+                            <img src="${window.location.origin.includes('localhost') ? 'https://go-aitech.com/logo.png' : window.location.origin + '/logo.png'}" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
                             <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
                             <p style="margin: 4px 0 0; color: #166534; font-size: 14px;">Selection Notification</p>
                         </div>
