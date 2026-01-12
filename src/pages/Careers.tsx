@@ -18,13 +18,19 @@ const applicationSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  linkedin_url: z.string().url("Invalid URL").refine((url) => url.includes("linkedin.com"), {
-    message: "Must be a valid LinkedIn URL (e.g. https://www.linkedin.com/in/...)",
+  linkedin_url: z.string().min(1, "LinkedIn URL is required").transform((val) => {
+    if (val && !val.startsWith("http")) return `https://${val}`;
+    return val;
+  }).refine((url) => url.includes("linkedin.com"), {
+    message: "Must be a valid LinkedIn URL",
   }),
-  portfolio_url: z.string().url("Invalid URL").optional().or(z.literal("")),
+  portfolio_url: z.string().optional().or(z.literal("")).transform((val) => {
+    if (val && !val.startsWith("http")) return `https://${val}`;
+    return val;
+  }),
   position: z.string().min(1, "Please select a position"),
   university: z.string().min(2, "University name is required"),
-  graduation_year: z.string().min(4, "Please select a graduation year"),
+  graduation_year: z.string().min(1, "Please select a graduation year"),
   skills: z.string().optional(),
   motivation: z.string().min(50, "Please provide at least 50 characters for your motivation"),
   fax_number: z.string().max(0, "Bot detected"), // Honeypot: must be empty
@@ -197,13 +203,21 @@ const Careers = () => {
       if (resumeFile.size > 5 * 1024 * 1024) throw new Error("Resume file size must be less than 5MB");
 
       // Validate file type
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (!allowedTypes.includes(resumeFile.type)) throw new Error("Please upload a PDF or Word document");
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      const fileExt = resumeFile.name.split('.').pop()?.toLowerCase();
+      const allowedExts = ['pdf', 'doc', 'docx'];
+
+      if (!allowedTypes.includes(resumeFile.type) && (!fileExt || !allowedExts.includes(fileExt))) {
+        throw new Error("Please upload a PDF or Word document (.pdf, .doc, .docx)");
+      }
 
       console.log("Uploading resume:", resumeFile.name);
 
       // Upload resume to Supabase Storage
-      const fileExt = resumeFile.name.split('.').pop();
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${fileName}`;
 
@@ -479,6 +493,11 @@ ${window.location.origin}/hrms/recruitment
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                  {/* Honeypot field - Hidden from users */}
+                  <div className="hidden" aria-hidden="true">
+                    <Input name="fax_number" tabIndex={-1} autoComplete="off" />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
                       <Label htmlFor="full_name">Full Name *</Label>
