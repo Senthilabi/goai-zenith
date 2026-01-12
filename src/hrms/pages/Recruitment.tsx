@@ -26,6 +26,17 @@ const Recruitment = () => {
     const [selectedApp, setSelectedApp] = useState<any | null>(null);
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
+    // Interview Scheduling State
+    const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+    const [schedulingApp, setSchedulingApp] = useState<any | null>(null);
+    const [interviewData, setInterviewData] = useState({
+        date: '',
+        time: '',
+        mode: 'Online',
+        location: '',
+        interviewer: 'HR Team'
+    });
+
     // Notes/Status Update State
     const [notes, setNotes] = useState("");
     const [newStatus, setNewStatus] = useState("");
@@ -106,17 +117,71 @@ const Recruitment = () => {
         }
     };
 
-    const handleSendInterviewInvite = async (app: any) => {
+    const handleSendInterviewInvite = async () => {
+        if (!schedulingApp) return;
+
         try {
-            // Simulate sending interview invite email
+            // Updated Subject & Body according to user's draft
+            const subject = `Interview Schedule – ${schedulingApp.position}`;
+            const message = `
+GOAI TECHNOLOGIES PVT LTD
+[Company Address Line 1, Line 2]
+Email: hello@go-aitech.com | Website: www.go-aitech.com
+--------------------------------------------------
+
+Subject: ${subject}
+
+Dear ${schedulingApp.full_name},
+
+Date: ${new Date().toLocaleDateString()}
+
+Thank you for your interest in opportunities with GoAI Technologies Pvt Ltd. Based on your profile, we are pleased to invite you for an interview as per the details below.
+
+Position / Role: ${schedulingApp.position}
+Interview Date: ${interviewData.date}
+Interview Time: ${interviewData.time}
+Interview Mode: ${interviewData.mode}
+Interview Location / Link: ${interviewData.location}
+Interviewer(s): ${interviewData.interviewer}
+
+Please ensure your availability at the scheduled time. If you are unable to attend, kindly inform us in advance for rescheduling.
+
+For online interviews, ensure a stable internet connection and a quiet environment.
+
+We look forward to interacting with you.
+
+Warm regards,
+HR Team
+GoAI Technologies Pvt Ltd
+Email: hello@go-aitech.com
+            `.trim();
+
+            console.log("Sending invite to:", schedulingApp.email);
+
+            // Send via Web3Forms (Using the same key as Careers)
+            const response = await fetch("https://api.web3forms.com/submit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    access_key: "eefdb10e-f591-4963-9a67-e45f0d8afda3",
+                    subject: subject,
+                    from_name: "GoAi Recruitment",
+                    name: "GoAi Technologies",
+                    email: "hello@go-aitech.com",
+                    to_email: schedulingApp.email, // Candidate
+                    replyto: "hello@go-aitech.com",
+                    message: message
+                })
+            });
+
             toast({
                 title: "Interview Invite Sent!",
-                description: `Email sent to ${app.email} with interview details.`,
-                duration: 5000
+                description: `Branded email sent to ${schedulingApp.email} successfully.`,
             });
 
             // Update status to interview_scheduled
-            await updateStatus(app.id, 'interview_scheduled');
+            await updateStatus(schedulingApp.id, 'interview_scheduled');
+            setIsScheduleDialogOpen(false);
         } catch (error: any) {
             toast({ title: "Error", description: error.message, variant: "destructive" });
         }
@@ -493,13 +558,15 @@ const Recruitment = () => {
                                                                     </Select>
                                                                 </div>
 
-                                                                {/* Interview Stage Actions */}
                                                                 {selectedApp.status === 'shortlisted' && (
                                                                     <div className="border rounded-lg p-4 bg-blue-50">
                                                                         <h4 className="font-semibold text-sm mb-2">Interview Stage</h4>
                                                                         <Button
                                                                             className="w-full bg-blue-600 hover:bg-blue-700"
-                                                                            onClick={() => handleSendInterviewInvite(selectedApp)}
+                                                                            onClick={() => {
+                                                                                setSchedulingApp(selectedApp);
+                                                                                setIsScheduleDialogOpen(true);
+                                                                            }}
                                                                         >
                                                                             📧 Send Interview Invite
                                                                         </Button>
@@ -633,6 +700,79 @@ const Recruitment = () => {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Schedule Interview Dialog */}
+            <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Schedule Interview</DialogTitle>
+                        <DialogDescription>
+                            Complete the details below to send a branded invite to {schedulingApp?.full_name}.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 pt-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold uppercase text-muted-foreground">Interview Date</label>
+                                <Input
+                                    type="date"
+                                    value={interviewData.date}
+                                    onChange={(e) => setInterviewData({ ...interviewData, date: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold uppercase text-muted-foreground">Interview Time</label>
+                                <Input
+                                    type="time"
+                                    value={interviewData.time}
+                                    onChange={(e) => setInterviewData({ ...interviewData, time: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">Interview Mode</label>
+                            <Select value={interviewData.mode} onValueChange={(val) => setInterviewData({ ...interviewData, mode: val })}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Online">Online / Video Call</SelectItem>
+                                    <SelectItem value="In-Person">In-Person / At Office</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">
+                                {interviewData.mode === 'Online' ? 'Meeting Link' : 'Office Location'}
+                            </label>
+                            <Input
+                                placeholder={interviewData.mode === 'Online' ? 'https://meet.google.com/...' : 'Office Address Line 1...'}
+                                value={interviewData.location}
+                                onChange={(e) => setInterviewData({ ...interviewData, location: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-semibold uppercase text-muted-foreground">Interviewer(s)</label>
+                            <Input
+                                placeholder="Name of interviewer"
+                                value={interviewData.interviewer}
+                                onChange={(e) => setInterviewData({ ...interviewData, interviewer: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="pt-4 flex gap-3">
+                            <Button variant="outline" className="flex-1" onClick={() => setIsScheduleDialogOpen(false)}>Cancel</Button>
+                            <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={handleSendInterviewInvite}>
+                                <Mail className="w-4 h-4 mr-2" /> Confirm & Send
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
