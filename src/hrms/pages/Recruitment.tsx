@@ -192,7 +192,7 @@ const Recruitment = () => {
             fetchApplications();
         } catch (error: any) {
             toast({
-                title: "Email Failed",
+                title: "Email Failed [v2.0]",
                 description: error.message,
                 variant: "destructive",
                 duration: 8000
