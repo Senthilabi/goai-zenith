@@ -127,6 +127,7 @@ const Recruitment = () => {
             const htmlMessage = `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
                     <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #3b82f6;">
+                        <img src="${window.location.origin}/logo.png" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
                         <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
                         <p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">Official Interview Invitation</p>
                     </div>
@@ -227,9 +228,36 @@ const Recruitment = () => {
             await updateStatus(appId, decision);
 
             if (decision === 'approved') {
+                const subject = "Congratulations! Your Application at GoAI Technologies";
+                const htmlMessage = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                        <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #22c55e;">
+                            <img src="${window.location.origin}/logo.png" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
+                            <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
+                            <p style="margin: 4px 0 0; color: #166534; font-size: 14px;">Selection Notification</p>
+                        </div>
+                        <div style="padding: 32px; color: #334155; line-height: 1.6;">
+                            <p>Dear Candidate,</p>
+                            <p>Congratulations! We are pleased to inform you that you have been <strong>selected</strong> for the position at <strong>GoAI Technologies</strong>.</p>
+                            <p>We were impressed with your skills and experience, and we believe you will be a valuable addition to our team.</p>
+                            <p><strong>Next Steps:</strong> Our HR team will soon initiate the onboarding process. You will receive a separate email with a link to complete your documentation and sign the NDA.</p>
+                            <p>Welcome aboard!</p>
+                        </div>
+                        <div style="background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 12px;">
+                            <p style="margin: 0;">&copy; ${new Date().getFullYear()} GoAI Technologies Pvt Ltd</p>
+                        </div>
+                    </div>
+                `;
+
+                await supabase.rpc('send_interview_invite', {
+                    recipient_email: email,
+                    email_subject: subject,
+                    email_html: htmlMessage
+                });
+
                 toast({
                     title: "Candidate Approved!",
-                    description: `Approval email sent to ${email}. You can now start onboarding.`,
+                    description: `Approval email sent to ${email} successfully.`,
                     duration: 6000
                 });
             }
@@ -258,8 +286,38 @@ const Recruitment = () => {
             }
 
             const link = `${window.location.origin}/onboarding/${onboardingId}`;
-            navigator.clipboard.writeText(link);
-            toast({ title: "Link Copied", description: "Onboarding link copied to clipboard." });
+
+            // Send Onboarding Email
+            const subject = "Next Steps: Complete Your Onboarding at GoAI Technologies";
+            const htmlMessage = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                    <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #3b82f6;">
+                        <img src="${window.location.origin}/logo.png" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
+                        <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
+                        <p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">Onboarding Documentation Request</p>
+                    </div>
+                    <div style="padding: 32px; color: #334155; line-height: 1.6;">
+                        <p>Dear Candidate,</p>
+                        <p>Welcome to the GoAI family! To proceed with your recruitment, we require you to complete your onboarding documentation and sign the Non-Disclosure Agreement (NDA).</p>
+                        <p>Please click the button below to access your secure onboarding portal:</p>
+                        <div style="text-align: center; margin: 32px 0;">
+                            <a href="${link}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600;">Complete My Onboarding</a>
+                        </div>
+                        <p style="font-size: 14px; color: #64748b;">If the button above does not work, copy and paste this link into your browser:<br/>${link}</p>
+                    </div>
+                    <div style="background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 12px;">
+                        <p style="margin: 0;">&copy; ${new Date().getFullYear()} GoAI Technologies Pvt Ltd</p>
+                    </div>
+                </div>
+            `;
+
+            await supabase.rpc('send_interview_invite', {
+                recipient_email: email,
+                email_subject: subject,
+                email_html: htmlMessage
+            });
+
+            toast({ title: "Email Sent", description: "Onboarding link sent to candidate successfully." });
             fetchApplications();
 
         } catch (error: any) {
@@ -295,10 +353,41 @@ const Recruitment = () => {
                 throw new Error(data.error || 'Failed to create user');
             }
 
-            // 3. Show Success + Credentials (Simulated Email)
+            // 3. Send Credentials Email
+            const subject = "Official Access: Your GoAI Technologies HRMS Account";
+            const htmlMessage = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                    <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #22c55e;">
+                        <img src="${window.location.origin}/logo.png" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
+                        <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
+                        <p style="margin: 4px 0 0; color: #166534; font-size: 14px;">Employee Login Credentials</p>
+                    </div>
+                    <div style="padding: 32px; color: #334155; line-height: 1.6;">
+                        <p>Dear <strong>${app.full_name}</strong>,</p>
+                        <p>Welcome to <strong>GoAI Technologies</strong>! Your official employee account has been created. You can now access our HRMS portal for attendance, leaves, and your professional profile.</p>
+                        
+                        <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin: 24px 0;">
+                            <p style="margin: 0 0 10px;"><strong>Portal Link:</strong> <a href="${window.location.origin}">${window.location.origin}</a></p>
+                            <p style="margin: 0 0 10px;"><strong>Login ID:</strong> ${systemLoginId}</p>
+                            <p style="margin: 0;"><strong>Initial Password:</strong> ${tempPassword}</p>
+                        </div>
+                        
+                        <p style="background: #fff7ed; padding: 12px; border-left: 4px solid #f97316; font-size: 13px;">
+                            <strong>Note:</strong> We recommend changing your password after your first login through the "My Profile" section.
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            await supabase.rpc('send_interview_invite', {
+                recipient_email: app.email,
+                email_subject: subject,
+                email_html: htmlMessage
+            });
+
             toast({
-                title: "✅ Employee Created & Credentials Sent!",
-                description: `Sent to: ${app.email}\n\nLogin ID: ${systemLoginId}\nPassword: ${tempPassword}\n\nThey can now log in to the HRMS portal.`,
+                title: "✅ Employee Created & Email Sent!",
+                description: `Branded email with credentials sent to ${app.email}.`,
                 duration: 12000,
             });
 
@@ -687,7 +776,7 @@ const Recruitment = () => {
                                                                             <Button
                                                                                 size="sm"
                                                                                 className="w-full bg-purple-600 hover:bg-purple-700"
-                                                                                disabled={!['shortlisted', 'accepted'].includes(newStatus)}
+                                                                                disabled={!['shortlisted', 'accepted', 'approved'].includes(newStatus)}
                                                                                 onClick={() => handleStartOnboarding(selectedApp.id, selectedApp.email)}
                                                                             >
                                                                                 Start Onboarding
