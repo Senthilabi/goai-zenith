@@ -197,27 +197,104 @@ We look forward to welcoming you to the team.`;
         }
     };
 
+    const saveDocument = async (docType: string, blob: Blob, fileName: string) => {
+        try {
+            const filePath = `${application.id}/${Date.now()}_${fileName}`;
+            const { error: uploadError } = await supabase.storage
+                .from('hrms_generated_docs')
+                .upload(filePath, blob);
+
+            if (uploadError) throw uploadError;
+
+            // Map to database
+            const { error: dbError } = await supabase
+                .from('hrms_documents')
+                .insert({
+                    candidate_id: application.id,
+                    employee_id: null,
+                    doc_type: docType,
+                    file_path: filePath
+                });
+
+            if (dbError) throw dbError;
+            return filePath;
+        } catch (error: any) {
+            console.error('Error saving document:', error);
+            throw error;
+        }
+    };
+
+    const generateAndStoreSignedNDA = async () => {
+        const doc = new jsPDF();
+
+        // Header Branding (Same as Offer Letter)
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100);
+        doc.text("Registered Office: [Company Address]", 105, 32, { align: "center" });
+        doc.text("Email: hr@go-aitech.com | Website: www.go-aitech.com", 105, 37, { align: "center" });
+
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.setFont("helvetica", "bold underline");
+        doc.text("NON-DISCLOSURE AGREEMENT (NDA)", 105, 52, { align: "center" });
+
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 65);
+
+        const intro = `This Non-Disclosure Agreement ("Agreement") is entered into between GoAI Technologies Pvt Ltd ("Company") and ${application.full_name} ("Recipient") for the purpose of protecting confidential and proprietary information.`;
+        doc.text(doc.splitTextToSize(intro, 170), 20, 75);
+
+        const body = `1. Definition of Confidential Information: Includes technical data, source code, designs, algorithms, business plans, etc.\n2. Obligation of Confidentiality: Recipient agrees not to disclose or use information for unauthorized purposes.\n3. Exclusions: Publicly available or independently developed info.\n4. Term: Effective during engagement and for 2 Years thereafter.\n5. Return of Materials: Return/delete all company materials upon termination.\n6. Intellectual Property: Any work developed is sole property of the Company.\n7. Breach: Result in termination and legal action.\n8. Governing Law: Laws of India.`;
+        doc.text(doc.splitTextToSize(body, 170), 20, 95);
+
+        // Digital Acceptance Section
+        doc.setFont("helvetica", "bold");
+        doc.text("Digital Acceptance & Confirmation", 20, 180);
+        doc.setFont("helvetica", "normal");
+        doc.text(`"I have read, understood, and agree to the terms... Digital acceptance is legally binding."`, 20, 188, { maxWidth: 170 });
+
+        doc.text(`Recipient Name: ${application.full_name}`, 20, 205);
+        doc.text(`Date of Acceptance: ${new Date().toLocaleDateString()}`, 20, 212);
+        doc.text(`Digital Fingerprint: ${application.id.substring(0, 12)}...`, 20, 219);
+
+        doc.text("For GoAI Technologies Pvt Ltd", 130, 205);
+        doc.setFont("helvetica", "bold");
+        doc.text("Authorized Signatory", 130, 220);
+
+        const pdfBlob = doc.output('blob');
+        await saveDocument('nda', pdfBlob, 'Signed_NDA.pdf');
+    };
+
     // --- STEP 4: SIGN NDA ---
     const handleSignNDA = async () => {
         setSubmitting(true);
         try {
-            // Get IP (Simulated/Best Effort)
-            // In a real edge function we'd get the header, client-side we can just store user agent
+            // 1. Generate and Store PDF
+            await generateAndStoreSignedNDA();
+
+            // 2. Update Status
             const { error } = await supabase
                 .from('hrms_onboarding')
                 .update({
                     nda_status: 'signed',
                     nda_signed_at: new Date().toISOString(),
-                    ip_address: 'client-ip-placeholder',
+                    ip_address: 'client-ip-capture',
                     user_agent: navigator.userAgent,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', id);
 
             if (error) throw error;
-            toast({ title: "NDA Signed", description: "Onboarding Complete!" });
+            toast({ title: "NDA Signed & Saved", description: "Onboarding Complete!" });
             setStep(5);
         } catch (error: any) {
+            console.error(error);
             toast({ title: "Error", description: error.message, variant: "destructive" });
         } finally {
             setSubmitting(false);
@@ -331,14 +408,61 @@ We look forward to welcoming you to the team.`;
                     {step === 4 && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                             <div className="space-y-4">
-                                <Label>Non-Disclosure Agreement (Standard)</Label>
-                                <div className="h-48 overflow-y-auto border rounded-md p-4 bg-slate-50 text-xs text-slate-600 leading-relaxed font-mono">
-                                    <p className="mb-2"><strong>CONFIDENTIALITY AGREEMENT</strong></p>
-                                    <p>This Agreement is made between GoAi Technologies ("Company") and {application.full_name} ("Intern").</p>
-                                    <p>1. <strong>Confidential Information</strong>: The Intern agrees not to disclose any proprietary information, code, or trade secrets belonging to the Company.</p>
-                                    <p>2. <strong>Intellectual Property</strong>: All work created during the internship is the sole property of the Company.</p>
-                                    <p>3. <strong>Term</strong>: This agreement is effective from the start date of the internship and continues indefinitely regarding confidential information.</p>
-                                    <p className="mt-4">[... Full Legal Text Placeholder ...]</p>
+                                <Label>Non-Disclosure Agreement (Official)</Label>
+                                <div className="h-72 overflow-y-auto border rounded-md p-6 bg-slate-50 text-[13px] text-slate-700 leading-relaxed font-sans shadow-inner">
+                                    <div className="text-center mb-6">
+                                        <h3 className="font-bold text-lg text-slate-900">GOAI TECHNOLOGIES PVT LTD</h3>
+                                        <p className="text-[11px] text-slate-500">Registered Office: [Company Address Line 1, Line 2]</p>
+                                        <p className="text-[11px] text-slate-500">Email: hr@go-aitech.com | Website: www.go-aitech.com</p>
+                                        <h4 className="font-bold border-b-2 border-slate-900 inline-block mt-4 pb-1">NON-DISCLOSURE AGREEMENT (NDA)</h4>
+                                    </div>
+
+                                    <p className="mb-4 text-right"><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+
+                                    <p className="mb-4">
+                                        This Non-Disclosure Agreement ("Agreement") is entered into between <strong>GoAI Technologies Pvt Ltd</strong> ("Company") and <strong>{application.full_name}</strong> ("Recipient") for the purpose of protecting confidential and proprietary information.
+                                    </p>
+
+                                    <ol className="list-decimal pl-5 space-y-3 mb-6">
+                                        <li><strong>Definition of Confidential Information:</strong> Confidential Information includes, but is not limited to, technical data, source code, product designs, algorithms, business plans, customer data, financial information, processes, documentation, and any other non-public information disclosed by the Company.</li>
+                                        <li><strong>Obligation of Confidentiality:</strong> The Recipient agrees not to disclose, copy, distribute, or use any Confidential Information for any purpose other than authorized company work.</li>
+                                        <li><strong>Exclusions:</strong> Confidential Information does not include information that is publicly available, independently developed, or lawfully obtained from a third party without breach of this Agreement.</li>
+                                        <li><strong>Term:</strong> This Agreement shall remain in effect during the internship/engagement period and for a period of <strong>2 Years</strong> after termination.</li>
+                                        <li><strong>Return of Materials:</strong> Upon completion or termination, the Recipient shall return or delete all confidential materials belonging to the Company.</li>
+                                        <li><strong>Intellectual Property:</strong> Any work, invention, code, or material developed during the engagement shall be the sole property of the Company.</li>
+                                        <li><strong>Breach:</strong> Any breach of this Agreement may result in immediate termination and legal action as per applicable laws.</li>
+                                        <li><strong>Governing Law:</strong> This Agreement shall be governed by and construed in accordance with the laws of India.</li>
+                                    </ol>
+
+                                    <div className="mt-8 pt-6 border-t border-slate-200">
+                                        <h4 className="font-bold mb-4 underline">Digital Acceptance & Confirmation</h4>
+                                        <p className="mb-2 italic">"I have read, understood, and agree to the terms of this Non-Disclosure Agreement."</p>
+                                        <p className="mb-6 italic">"I acknowledge that digital acceptance is legally binding and equivalent to a physical signature."</p>
+
+                                        <div className="grid grid-cols-2 gap-8 text-[12px]">
+                                            <div className="space-y-1">
+                                                <p className="font-bold">Recipient Name:</p>
+                                                <p className="border-b border-slate-400 pb-1">{application.full_name}</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="font-bold">Date of Acceptance:</p>
+                                                <p className="border-b border-slate-400 pb-1">{new Date().toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-8 pt-8 grid grid-cols-2 gap-8 text-[12px]">
+                                            <div className="space-y-4">
+                                                <div className="h-10"></div>
+                                                <p className="border-t border-slate-400 pt-1 font-bold">Digital Signature / Typed Name</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="font-bold">For GoAI Technologies Pvt Ltd</p>
+                                                <div className="h-10"></div>
+                                                <p className="border-t border-slate-400 pt-1 font-bold">Authorized Signatory</p>
+                                                <p className="text-slate-500">Managing Director</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

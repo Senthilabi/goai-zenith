@@ -16,6 +16,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
+import { jsPDF } from "jspdf";
 
 const Recruitment = () => {
     const { toast } = useToast();
@@ -41,6 +42,169 @@ const Recruitment = () => {
     // Notes/Status Update State
     const [notes, setNotes] = useState("");
     const [newStatus, setNewStatus] = useState("");
+    const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
+
+    const saveDocument = async (appId: string | null, empId: string | null, docType: string, blob: Blob, fileName: string) => {
+        try {
+            const filePath = `${empId || appId}/${Date.now()}_${fileName}`;
+            const { error: uploadError } = await supabase.storage
+                .from('hrms_generated_docs')
+                .upload(filePath, blob);
+
+            if (uploadError) throw uploadError;
+
+            const { error: dbError } = await supabase
+                .from('hrms_documents')
+                .insert({
+                    candidate_id: appId,
+                    employee_id: empId,
+                    doc_type: docType,
+                    file_path: filePath,
+                    issued_by: user?.id
+                });
+
+            if (dbError) throw dbError;
+
+            return filePath;
+        } catch (error: any) {
+            console.error('Error saving document:', error);
+            throw error;
+        }
+    };
+
+    const generateOfferLetter = async (app: any, isFinal: boolean = false) => {
+        const doc = new jsPDF();
+        const logoUrl = "/logo.png"; // Local path for public assets
+
+        // Header Branding
+        try {
+            doc.addImage(logoUrl, 'PNG', 20, 15, 12, 12);
+        } catch (e) {
+            console.error("Logo failed to load", e);
+        }
+
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100);
+        doc.text("Registered Office: [Company Address]", 105, 32, { align: "center" });
+        doc.text("Email: hr@go-aitech.com | Website: www.go-aitech.com", 105, 37, { align: "center" });
+
+        // Subject line
+        doc.setDrawColor(0);
+        doc.line(20, 42, 190, 42);
+
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.setFont("helvetica", "bold");
+        doc.text("Internship Offer Letter", 105, 52, { align: "center" });
+
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 65);
+
+        doc.text(`Dear ${app.full_name},`, 20, 80);
+
+        const intro = `We are pleased to offer you an Internship at GoAI Technologies Pvt Ltd. You have been selected based on your profile and discussions with our team.`;
+        const splitIntro = doc.splitTextToSize(intro, 170);
+        doc.text(splitIntro, 20, 90);
+
+        // Details Table-like layout
+        let y = 110;
+        const details = [
+            ["Role", app.position || "Intern"],
+            ["Internship Duration", "6 Months"],
+            ["Start Date", "As per onboarding"],
+            ["Mode", "Hybrid / Remote"]
+        ];
+
+        details.forEach(([label, value]) => {
+            doc.setFont("helvetica", "bold");
+            doc.text(`${label}:`, 30, y);
+            doc.setFont("helvetica", "normal");
+            doc.text(value, 80, y);
+            y += 10;
+        });
+
+        const footer = `This internship is purely for training and academic exposure and does not guarantee employment. You are expected to comply with all company policies and confidentiality requirements.`;
+        const splitFooter = doc.splitTextToSize(footer, 170);
+        doc.text(splitFooter, 20, y + 10);
+
+        doc.text("For GoAI Technologies Pvt Ltd", 20, y + 40);
+        doc.setFont("helvetica", "bold");
+        doc.text("Authorized Signatory", 20, y + 55);
+
+        if (isFinal) {
+            const pdfBlob = doc.output('blob');
+            await saveDocument(app.id, null, 'offer_letter', pdfBlob, 'Offer_Letter.pdf');
+            toast({ title: "Selection Letter Issued", description: "Saved to candidate records." });
+        }
+
+        window.open(doc.output('bloburl'), '_blank');
+        if (!isFinal) {
+            toast({ title: "Preview Generated", description: "Opening selection letter preview..." });
+        }
+    };
+
+    const generateCertificate = async (app: any, isFinal: boolean = false) => {
+        const doc = new jsPDF({ orientation: 'landscape' });
+
+        // Fancy Border
+        doc.setDrawColor(20, 184, 166); // Teal-500
+        doc.setLineWidth(2);
+        doc.rect(10, 10, 277, 190);
+        doc.setLineWidth(0.5);
+        doc.rect(12, 12, 273, 186);
+
+        // Content
+        try {
+            doc.addImage("/logo.png", 'PNG', 135, 20, 25, 25);
+        } catch (e) {
+            console.error("Logo failed to load", e);
+        }
+
+        doc.setFontSize(36);
+        doc.setFont("times", "bolditalic");
+        doc.setTextColor(20, 184, 166); // Teal-500
+        doc.text("Certificate of Completion", 148, 60, { align: "center" });
+
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(71, 85, 105);
+        doc.text("INTERNSHIP COMPLETION CERTIFICATE", 148.5, 58, { align: "center" });
+
+        // Body
+        doc.setFontSize(16);
+        doc.setTextColor(30, 41, 59);
+        const body = `This is to certify that ${app.full_name} has successfully completed an internship with GoAI Technologies Pvt Ltd as a ${app.position || 'Intern'} for a period of 6 Months from ${format(new Date(app.created_at), 'PPP')} to ${format(new Date(), 'PPP')}.`;
+        const splitBody = doc.splitTextToSize(body, 220);
+        doc.text(splitBody, 148.5, 90, { align: "center" });
+
+        doc.text("During this period, the intern demonstrated dedication, sincerity, and a willingness to learn. We wish them success in their future academic and professional endeavors.", 148.5, 125, { align: "center", maxWidth: 220 });
+
+        doc.setFontSize(12);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 50, 155);
+
+        // Footer
+        doc.line(180, 170, 250, 170);
+        doc.text("For GoAI Technologies Pvt Ltd", 215, 175, { align: "center" });
+        doc.setFont("helvetica", "bold");
+        doc.text("Authorized Signatory", 215, 182, { align: "center" });
+
+        if (isFinal) {
+            const pdfBlob = doc.output('blob');
+            await saveDocument(null, app.emp_id || app.id, 'certificate', pdfBlob, 'Completion_Certificate.pdf');
+            toast({ title: "Certificate Issued", description: "Successfully saved to employee records." });
+        }
+
+        window.open(doc.output('bloburl'), '_blank');
+        if (!isFinal) {
+            toast({ title: "Preview Generated", description: "Opening certificate preview..." });
+        }
+    };
 
     useEffect(() => {
         const checkAccess = async () => {
@@ -72,7 +236,7 @@ const Recruitment = () => {
             setLoading(true);
             const { data, error } = await supabase
                 .from('internship_applications')
-                .select('*, onboarding:hrms_onboarding(id, offer_status, nda_status, photo_url, personal_email)')
+                .select('*, onboarding:hrms_onboarding(*)')
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -82,6 +246,21 @@ const Recruitment = () => {
             toast({ title: "Error", description: "Failed to load applications", variant: "destructive" });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchIssuedDocs = async (appId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('hrms_documents')
+                .select('*')
+                .eq('candidate_id', appId)
+                .order('generated_at', { ascending: false });
+
+            if (error) throw error;
+            setIssuedDocs(data || []);
+        } catch (error: any) {
+            console.error('Error fetching docs:', error);
         }
     };
 
@@ -588,9 +767,9 @@ const Recruitment = () => {
                                                         setSelectedApp(app);
                                                         setNewStatus(app.status);
                                                         setNotes(app.notes || "");
+                                                        fetchIssuedDocs(app.id);
                                                     }}>
-                                                        <Eye className="h-4 w-4 mr-2" />
-                                                        View
+                                                        View Details
                                                     </Button>
                                                 </DialogTrigger>
                                                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -718,10 +897,27 @@ const Recruitment = () => {
                                                                                 ✗ Reject
                                                                             </Button>
                                                                         </div>
+                                                                        {selectedApp.status === 'approved' && (
+                                                                            <div className="grid grid-cols-2 gap-2">
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                                                                                    onClick={() => generateOfferLetter(selectedApp, false)}
+                                                                                >
+                                                                                    <FileText className="mr-2 h-4 w-4" /> Preview
+                                                                                </Button>
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                                                                                    onClick={() => generateOfferLetter(selectedApp, true)}
+                                                                                >
+                                                                                    <Send className="mr-2 h-4 w-4" /> Issue Offer
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                )}
 
-                                                                {/* Onboarding Panel */}
+                                                                    {/* Onboarding Panel */}
                                                                 <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
                                                                     <h4 className="font-semibold text-sm flex items-center gap-2">
                                                                         <UserPlus className="h-4 w-4" /> Onboarding Pipeline
@@ -769,10 +965,32 @@ const Recruitment = () => {
                                                                                     Approve & Send Credentials
                                                                                 </Button>
                                                                             )}
+
+                                                                            {selectedApp.status === 'hired' && (
+                                                                                <div className="pt-2 border-t mt-2 space-y-2">
+                                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                                        <Button
+                                                                                            variant="outline"
+                                                                                            className="w-full"
+                                                                                            onClick={() => generateCertificate(selectedApp, false)}
+                                                                                        >
+                                                                                            <FileText className="mr-2 h-4 w-4" /> Preview
+                                                                                        </Button>
+                                                                                        <Button
+                                                                                            className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                                                                                            onClick={() => generateCertificate(selectedApp, true)}
+                                                                                        >
+                                                                                            <GraduationCap className="mr-2 h-4 w-4" /> Issue Cert
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                     ) : (
-                                                                        <div className="text-center py-4">
-                                                                            <p className="text-xs text-muted-foreground mb-2">Candidate is ready for onboarding?</p>
+                                                                        <div className="space-y-2">
+                                                                            <div className="text-xs text-muted-foreground text-center py-2">
+                                                                                Onboarding record not found.
+                                                                            </div>
                                                                             <Button
                                                                                 size="sm"
                                                                                 className="w-full bg-purple-600 hover:bg-purple-700"
@@ -784,6 +1002,36 @@ const Recruitment = () => {
                                                                         </div>
                                                                     )}
                                                                 </div>
+
+                                                                {/* Issued Documents Panel */}
+                                                                {issuedDocs.length > 0 && (
+                                                                    <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
+                                                                        <h4 className="font-semibold text-sm flex items-center gap-2">
+                                                                            <FileText className="h-4 w-4" /> Issued Documents
+                                                                        </h4>
+                                                                        <div className="space-y-2">
+                                                                            {issuedDocs.map((doc) => (
+                                                                                <div key={doc.id} className="flex items-center justify-between bg-white p-2 rounded border text-sm">
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className="font-medium capitalize">{doc.doc_type.replace('_', ' ')}</span>
+                                                                                        <span className="text-[10px] text-muted-foreground">{format(new Date(doc.generated_at), 'PPP')}</span>
+                                                                                    </div>
+                                                                                    <Button
+                                                                                        variant="ghost"
+                                                                                        size="sm"
+                                                                                        className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                                                        onClick={() => {
+                                                                                            const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/hrms_generated_docs/${doc.file_path}`;
+                                                                                            window.open(url, '_blank');
+                                                                                        }}
+                                                                                    >
+                                                                                        View
+                                                                                    </Button>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
 
                                                                 {/* Notes Box */}
                                                                 <div className="space-y-1">
@@ -884,7 +1132,7 @@ const Recruitment = () => {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 };
 
