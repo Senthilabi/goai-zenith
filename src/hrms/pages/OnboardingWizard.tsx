@@ -197,6 +197,24 @@ We look forward to welcoming you to the team.`;
         }
     };
 
+    const loadImageAsBase64 = (url: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                ctx?.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL("image/png"));
+            };
+            img.onerror = reject;
+            // Use the full URL if it is a relative path to ensure it loads in all environments
+            img.src = url.startsWith('http') ? url : window.location.origin + url;
+        });
+    };
+
     const saveDocument = async (docType: string, blob: Blob, fileName: string) => {
         try {
             const filePath = `${application.id}/${Date.now()}_${fileName}`;
@@ -228,6 +246,13 @@ We look forward to welcoming you to the team.`;
         const doc = new jsPDF();
 
         // Header Branding (Same as Offer Letter)
+        try {
+            const logoBase64 = await loadImageAsBase64("/logo.png");
+            doc.addImage(logoBase64, 'PNG', 20, 15, 12, 12);
+        } catch (e) {
+            console.error("Logo failed to load", e);
+        }
+
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
         doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });

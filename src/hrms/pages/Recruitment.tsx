@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
     Search, Filter, Download, UserPlus, FileText,
     Linkedin, Globe, GraduationCap, Mail, Phone, Rocket, Eye,
-    ShieldAlert, CheckCircle2
+    ShieldAlert, CheckCircle2, Send
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,6 +43,24 @@ const Recruitment = () => {
     const [notes, setNotes] = useState("");
     const [newStatus, setNewStatus] = useState("");
     const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
+
+    const loadImageAsBase64 = (url: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                ctx?.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL("image/png"));
+            };
+            img.onerror = reject;
+            // Use the full URL if it is a relative path to ensure it loads in all environments
+            img.src = url.startsWith('http') ? url : window.location.origin + url;
+        });
+    };
 
     const saveDocument = async (appId: string | null, empId: string | null, docType: string, blob: Blob, fileName: string) => {
         try {
@@ -78,7 +96,8 @@ const Recruitment = () => {
 
         // Header Branding
         try {
-            doc.addImage(logoUrl, 'PNG', 20, 15, 12, 12);
+            const logoBase64 = await loadImageAsBase64(logoUrl);
+            doc.addImage(logoBase64, 'PNG', 20, 15, 12, 12);
         } catch (e) {
             console.error("Logo failed to load", e);
         }
@@ -161,7 +180,8 @@ const Recruitment = () => {
 
         // Content
         try {
-            doc.addImage("/logo.png", 'PNG', 135, 20, 25, 25);
+            const logoBase64 = await loadImageAsBase64("/logo.png");
+            doc.addImage(logoBase64, 'PNG', 135, 20, 25, 25);
         } catch (e) {
             console.error("Logo failed to load", e);
         }
@@ -897,27 +917,32 @@ const Recruitment = () => {
                                                                                 ✗ Reject
                                                                             </Button>
                                                                         </div>
-                                                                        {selectedApp.status === 'approved' && (
-                                                                            <div className="grid grid-cols-2 gap-2">
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
-                                                                                    onClick={() => generateOfferLetter(selectedApp, false)}
-                                                                                >
-                                                                                    <FileText className="mr-2 h-4 w-4" /> Preview
-                                                                                </Button>
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                                                                                    onClick={() => generateOfferLetter(selectedApp, true)}
-                                                                                >
-                                                                                    <Send className="mr-2 h-4 w-4" /> Issue Offer
-                                                                                </Button>
-                                                                            </div>
-                                                                        )}
                                                                     </div>
+                                                                )}
 
-                                                                    {/* Onboarding Panel */}
+                                                                {selectedApp.status === 'approved' && (
+                                                                    <div className="border rounded-lg p-4 bg-green-50 space-y-3">
+                                                                        <h4 className="font-semibold text-sm mb-2">Issue Offer Letter</h4>
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                                                                                onClick={() => generateOfferLetter(selectedApp, false)}
+                                                                            >
+                                                                                <FileText className="mr-2 h-4 w-4" /> Preview
+                                                                            </Button>
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                                                                                onClick={() => generateOfferLetter(selectedApp, true)}
+                                                                            >
+                                                                                <Send className="mr-2 h-4 w-4" /> Issue Offer
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Onboarding Panel */}
                                                                 <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
                                                                     <h4 className="font-semibold text-sm flex items-center gap-2">
                                                                         <UserPlus className="h-4 w-4" /> Onboarding Pipeline
