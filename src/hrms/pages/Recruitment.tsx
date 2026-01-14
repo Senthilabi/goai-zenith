@@ -92,69 +92,55 @@ const Recruitment = () => {
 
     const generateOfferLetter = async (app: any, isFinal: boolean = false) => {
         const doc = new jsPDF();
-        const logoUrl = "/logo.png"; // Local path for public assets
 
-        // Header Branding
+        // Background Letterhead
         try {
-            const logoBase64 = await loadImageAsBase64(logoUrl);
-            doc.addImage(logoBase64, 'PNG', 20, 15, 12, 12);
+            const letterheadBase64 = await loadImageAsBase64("/letterhead.png");
+            doc.addImage(letterheadBase64, 'PNG', 0, 0, 210, 297);
         } catch (e) {
-            console.error("Logo failed to load", e);
+            console.error("Letterhead failed to load", e);
+            // Fallback branding if letterhead fails
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });
         }
 
-        doc.setFontSize(22);
-        doc.setFont("helvetica", "bold");
-        doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });
-
-        doc.setFontSize(10);
+        doc.setFontSize(12);
         doc.setFont("helvetica", "normal");
-        doc.setTextColor(100);
-        doc.text("Registered Office: [Company Address]", 105, 32, { align: "center" });
-        doc.text("Email: hr@go-aitech.com | Website: www.go-aitech.com", 105, 37, { align: "center" });
-
-        // Subject line
-        doc.setDrawColor(0);
-        doc.line(20, 42, 190, 42);
+        doc.text(`Ref: GoAI/OFFER/${app.id.slice(0, 8)}`, 20, 50);
+        doc.text(`Date: ${format(new Date(), 'PPP')}`, 20, 57);
 
         doc.setFontSize(14);
-        doc.setTextColor(0);
         doc.setFont("helvetica", "bold");
-        doc.text("Internship Offer Letter", 105, 52, { align: "center" });
+        doc.text("INTERNSHIP OFFER LETTER", 105, 75, { align: "center" });
 
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
-        doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 65);
+        doc.text(`To,`, 20, 90);
+        doc.text(`${app.full_name}`, 20, 96);
+        doc.text(`${app.university}`, 20, 102);
 
-        doc.text(`Dear ${app.full_name},`, 20, 80);
+        const body = `Dear ${app.full_name},
 
-        const intro = `We are pleased to offer you an Internship at GoAI Technologies Pvt Ltd. You have been selected based on your profile and discussions with our team.`;
-        const splitIntro = doc.splitTextToSize(intro, 170);
-        doc.text(splitIntro, 20, 90);
+Following your recent interview for the ${app.position} Intern position, we are pleased to offer you an internship with GoAI Technologies.
 
-        // Details Table-like layout
-        let y = 110;
-        const details = [
-            ["Role", app.position || "Intern"],
-            ["Internship Duration", "6 Months"],
-            ["Start Date", "As per onboarding"],
-            ["Mode", "Hybrid / Remote"]
-        ];
+Your internship is scheduled to begin on ${format(new Date(), 'PPP')} for a duration of 6 months. During this period, you will be working remotely/hybrid as per team requirements.
 
-        details.forEach(([label, value]) => {
-            doc.setFont("helvetica", "bold");
-            doc.text(`${label}:`, 30, y);
-            doc.setFont("helvetica", "normal");
-            doc.text(value, 80, y);
-            y += 10;
-        });
+Compensation & Benefits:
+• Performance-based stipend upon successful completion of milestones.
+• Internship Certificate and Letter of Recommendation (LOR) upon completion.
+• Exposure to real-world AI and Retail Tech projects.
 
-        const footer = `This internship is purely for training and academic exposure and does not guarantee employment. You are expected to comply with all company policies and confidentiality requirements.`;
-        const splitFooter = doc.splitTextToSize(footer, 170);
-        doc.text(splitFooter, 20, y + 10);
+This offer is subject to the signing of our standard Non-Disclosure Agreement (NDA).
 
-        doc.text("For GoAI Technologies Pvt Ltd", 20, y + 40);
-        doc.setFont("helvetica", "bold");
-        doc.text("Authorized Signatory", 20, y + 55);
+We look forward to having you join our team.
+
+Sincerely,
+HR Department
+GoAI Technologies`;
+
+        const splitText = doc.splitTextToSize(body, 170);
+        doc.text(splitText, 20, 115);
 
         if (isFinal) {
             const pdfBlob = doc.output('blob');

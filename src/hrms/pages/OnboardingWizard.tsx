@@ -245,23 +245,17 @@ We look forward to welcoming you to the team.`;
     const generateAndStoreSignedNDA = async () => {
         const doc = new jsPDF();
 
-        // Header Branding (Same as Offer Letter)
+        // Background Letterhead
         try {
-            const logoBase64 = await loadImageAsBase64("/logo.png");
-            doc.addImage(logoBase64, 'PNG', 20, 15, 12, 12);
+            const letterheadBase64 = await loadImageAsBase64("/letterhead.png");
+            doc.addImage(letterheadBase64, 'PNG', 0, 0, 210, 297);
         } catch (e) {
-            console.error("Logo failed to load", e);
+            console.error("Letterhead failed to load", e);
+            // Fallback branding
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });
         }
-
-        doc.setFontSize(22);
-        doc.setFont("helvetica", "bold");
-        doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });
-
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100);
-        doc.text("Registered Office: [Company Address]", 105, 32, { align: "center" });
-        doc.text("Email: hr@go-aitech.com | Website: www.go-aitech.com", 105, 37, { align: "center" });
 
         doc.setFontSize(14);
         doc.setTextColor(0);
