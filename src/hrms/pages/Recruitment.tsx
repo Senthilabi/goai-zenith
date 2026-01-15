@@ -11,12 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import {
     Search, Filter, Download, UserPlus, FileText,
     Linkedin, Globe, GraduationCap, Mail, Phone, Rocket, Eye,
-    ShieldAlert, CheckCircle2, Send
+    ShieldAlert, CheckCircle2, Send, Loader2, Check
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { jsPDF } from "jspdf";
+import { OfferEditor } from "@/hrms/components/OfferEditor";
 
 const Recruitment = () => {
     const { toast } = useToast();
@@ -44,13 +45,30 @@ const Recruitment = () => {
     const [newStatus, setNewStatus] = useState("");
     const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
 
-    // Offer Letter Details State
-    const [offerDetails, setOfferDetails] = useState({
-        joiningDate: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
-        internshipPeriod: 6,
-        customPosition: ''
-    });
+    const [createdCredentials, setCreatedCredentials] = useState<{ email: string, password: string, code: string } | null>(null);
 
+    // Refresh selectedApp when needed (e.g. after Offer Editor updates)
+    const refreshSelectedApp = async () => {
+        if (!selectedApp) return;
+        await fetchApplications(); // Refresh list
+
+        // Refresh individual object to get new onboarding IDs etc.
+        const { data: refreshedApp } = await supabase
+            .from('internship_applications')
+            .select('*, onboarding:hrms_onboarding(*)')
+            .eq('id', selectedApp.id)
+            .single();
+
+        if (refreshedApp) {
+            setSelectedApp(refreshedApp);
+            // Also update status filter if it changed
+            setNewStatus(refreshedApp.status);
+        }
+    };
+
+
+
+    // Helper functions for Certificate generation (still used)
     const loadImageAsBase64 = (url: string): Promise<string> => {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -94,165 +112,6 @@ const Recruitment = () => {
         } catch (error: any) {
             console.error('Error saving document:', error);
             throw error;
-        }
-    };
-
-    const generateOfferLetter = async (app: any, isFinal: boolean = false) => {
-        const doc = new jsPDF();
-
-        // Background Letterhead
-        try {
-            const letterheadBase64 = await loadImageAsBase64("/letterhead.png");
-            doc.addImage(letterheadBase64, 'PNG', 0, 0, 210, 297);
-        } catch (e) {
-            console.error("Letterhead failed to load", e);
-            // Fallback branding if letterhead fails
-            doc.setFontSize(22);
-            doc.setFont("helvetica", "bold");
-            doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });
-        }
-
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Ref: GoAI/OFFER/${app.id.slice(0, 8)}`, 20, 50);
-        doc.text(`Date: ${format(new Date(), 'PPP')}`, 20, 57);
-
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        doc.text("INTERNSHIP INFORMATION & OFFER LETTER", 105, 75, { align: "center" });
-
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        doc.text(`To,`, 20, 90);
-        doc.text(`${app.full_name}`, 20, 96);
-        doc.text(`${app.university}`, 20, 102);
-
-        const position = offerDetails.customPosition || app.position;
-        const joiningDate = offerDetails.joiningDate ? format(new Date(offerDetails.joiningDate), 'PPP') : format(new Date(), 'PPP');
-        const period = offerDetails.internshipPeriod;
-
-        const body = `Dear ${app.full_name},
-
-Following your recent interview for the ${position} Intern position, we are pleased to offer you an internship with GoAI Technologies.
-
-Your internship is scheduled to begin on ${joiningDate} for a duration of ${period} months. During this period, you will be working remotely/hybrid as per team requirements.
-
-Compensation & Benefits:
-• Internship Certificate and Letter of Recommendation (LOR) upon completion.
-• Exposure to real-world AI and Retail Tech projects.
-
-This offer is subject to the signing of our standard Non-Disclosure Agreement (NDA).
-
-We look forward to having you join our team.
-
-Sincerely,
-HR Department
-GoAI Technologies`;
-
-        const splitText = doc.splitTextToSize(body, 170);
-        doc.text(splitText, 20, 115);
-
-        if (isFinal) {
-            const pdfBlob = doc.output('blob');
-            await saveDocument(app.id, null, 'offer_letter', pdfBlob, 'Offer_Letter.pdf');
-
-            // Send email to candidate
-            try {
-                const subject = `Internship Offer Letter – ${position}`;
-                const htmlMessage = `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-                        <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #10b981;">
-                            <img src="${window.location.origin}/logo.png" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
-                            <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
-                            <p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">Internship Offer Letter</p>
-                        </div>
-                        <div style="padding: 32px; color: #334155; line-height: 1.6;">
-                            <p>Dear <strong>${app.full_name}</strong>,</p>
-                            <p>Congratulations! We are pleased to offer you an internship position at <strong>GoAI Technologies</strong>.</p>
-                            
-                            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 6px; margin: 24px 0;">
-                                <h3 style="margin: 0 0 12px; color: #059669; font-size: 16px;">Offer Details</h3>
-                                <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
-                                    <tr><td style="padding: 4px 0; color: #64748b; width: 140px;">Position:</td><td style="padding: 4px 0; font-weight: 600;">${position}</td></tr>
-                                    <tr><td style="padding: 4px 0; color: #64748b;">Joining Date:</td><td style="padding: 4px 0; font-weight: 600;">${joiningDate}</td></tr>
-                                    <tr><td style="padding: 4px 0; color: #64748b;">Duration:</td><td style="padding: 4px 0; font-weight: 600;">${period} Months</td></tr>
-                                    <tr><td style="padding: 4px 0; color: #64748b;">Mode:</td><td style="padding: 4px 0; font-weight: 600;">Remote/Hybrid</td></tr>
-                                </table>
-                            </div>
-
-                            <p style="margin-bottom: 24px;">Please find your official offer letter attached to this email. To proceed with onboarding, please check your email for the onboarding link.</p>
-                            
-                            <p style="margin-top: 32px; font-size: 14px;"><strong>Next Steps:</strong><br/>
-                            1. Review the attached offer letter<br/>
-                            2. Complete the onboarding process via the link sent separately<br/>
-                            3. Sign the NDA and upload required documents</p>
-                        </div>
-                        <div style="background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 12px;">
-                            <p style="margin: 0;">&copy; ${new Date().getFullYear()} GoAI Technologies Pvt Ltd</p>
-                            <p style="margin: 4px 0;">Email: hr@go-aitech.com | Website: www.go-aitech.com</p>
-                        </div>
-                    </div>
-                `;
-
-                // Create onboarding record if doesn't exist
-                let onboardingLink = '';
-                const { data: existingOnboarding } = await supabase
-                    .from('hrms_onboarding')
-                    .select('id')
-                    .eq('application_id', app.id)
-                    .single();
-
-                if (existingOnboarding) {
-                    onboardingLink = `${window.location.origin}/onboarding/${existingOnboarding.id}`;
-                } else {
-                    const { data: newOnboarding } = await supabase
-                        .from('hrms_onboarding')
-                        .insert([{ application_id: app.id, personal_email: app.email }])
-                        .select('id')
-                        .single();
-                    if (newOnboarding) {
-                        onboardingLink = `${window.location.origin}/onboarding/${newOnboarding.id}`;
-                    }
-                }
-
-                // Update email to include onboarding link
-                const finalHtmlMessage = htmlMessage.replace(
-                    'Please find your official offer letter attached to this email. To proceed with onboarding, please check your email for the onboarding link.',
-                    `Please find your official offer letter details above. To proceed with onboarding, click the button below to complete your documentation and sign the NDA.<br/><br/>
-                    <a href="${onboardingLink}" style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 16px;">Complete Onboarding</a>`
-                );
-
-                const { error: emailError } = await supabase.rpc('send_interview_invite', {
-                    recipient_email: app.email,
-                    email_subject: subject,
-                    email_html: finalHtmlMessage
-                });
-
-                if (emailError) {
-                    console.error("Email send error:", emailError);
-                    toast({
-                        title: "Letter Saved, Email Failed",
-                        description: "Offer letter saved but email could not be sent. Please send manually.",
-                        variant: "destructive"
-                    });
-                } else {
-                    toast({
-                        title: "Offer Letter Shared!",
-                        description: `Email sent to ${app.email} successfully.`
-                    });
-                }
-            } catch (error) {
-                console.error("Email error:", error);
-                toast({
-                    title: "Letter Saved",
-                    description: "Saved to records. Email sending failed - please send manually."
-                });
-            }
-        }
-
-        window.open(doc.output('bloburl'), '_blank');
-        if (!isFinal) {
-            toast({ title: "Preview Generated", description: "Opening selection letter preview..." });
         }
     };
 
@@ -654,7 +513,15 @@ GoAI Technologies`;
             await updateStatus(app.id, 'hired');
 
             // 5. Refresh the applications list
+            // 5. Refresh the applications list
             fetchApplications();
+
+            // 6. Show Credentials Dialog
+            setCreatedCredentials({
+                email: systemLoginId,
+                password: tempPassword,
+                code: empCode
+            });
 
         } catch (error: any) {
             console.error('Error creating employee:', error);
@@ -666,18 +533,15 @@ GoAI Technologies`;
         }
     };
 
-    const downloadResume = async (path: string, name: string) => {
+    const viewResume = async (path: string) => {
         if (!path) return;
         try {
-            const { data, error } = await supabase.storage.from('resumes').download(path);
+            // Create a signed URL valid for 1 hour
+            const { data, error } = await supabase.storage.from('resumes').createSignedUrl(path, 3600);
             if (error) throw error;
-            const url = URL.createObjectURL(data);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${name}_Resume.pdf`;
-            a.click();
+            window.open(data.signedUrl, '_blank');
         } catch (error: any) {
-            toast({ title: "Error", description: "Failed to download resume", variant: "destructive" });
+            toast({ title: "Error", description: "Failed to load resume", variant: "destructive" });
         }
     };
 
@@ -895,8 +759,8 @@ GoAI Technologies`;
                                                                     <p className="italic">"{selectedApp.motivation}"</p>
                                                                 </div>
 
-                                                                <Button variant="outline" size="sm" className="w-full" onClick={() => downloadResume(selectedApp.resume_link, selectedApp.full_name)}>
-                                                                    <FileText className="mr-2 h-4 w-4" /> Download Resume
+                                                                <Button variant="outline" size="sm" className="w-full" onClick={() => viewResume(selectedApp.resume_link)}>
+                                                                    <FileText className="mr-2 h-4 w-4" /> View Resume
                                                                 </Button>
                                                             </div>
 
@@ -985,61 +849,11 @@ GoAI Technologies`;
                                                                         <h4 className="font-semibold text-sm mb-2">Offer Letter Details</h4>
 
                                                                         {/* Offer Details Editor */}
-                                                                        <div className="space-y-3 bg-white p-3 rounded border">
-                                                                            <div className="grid grid-cols-2 gap-3">
-                                                                                <div className="space-y-1">
-                                                                                    <label className="text-xs font-medium text-muted-foreground">Joining Date</label>
-                                                                                    <Input
-                                                                                        type="date"
-                                                                                        value={offerDetails.joiningDate}
-                                                                                        onChange={(e) => setOfferDetails({ ...offerDetails, joiningDate: e.target.value })}
-                                                                                        className="h-8 text-sm"
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="space-y-1">
-                                                                                    <label className="text-xs font-medium text-muted-foreground">Period (Months)</label>
-                                                                                    <Select
-                                                                                        value={offerDetails.internshipPeriod.toString()}
-                                                                                        onValueChange={(val) => setOfferDetails({ ...offerDetails, internshipPeriod: parseInt(val) })}
-                                                                                    >
-                                                                                        <SelectTrigger className="h-8 text-sm">
-                                                                                            <SelectValue />
-                                                                                        </SelectTrigger>
-                                                                                        <SelectContent>
-                                                                                            <SelectItem value="3">3 Months</SelectItem>
-                                                                                            <SelectItem value="6">6 Months</SelectItem>
-                                                                                            <SelectItem value="12">12 Months</SelectItem>
-                                                                                        </SelectContent>
-                                                                                    </Select>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="space-y-1">
-                                                                                <label className="text-xs font-medium text-muted-foreground">Position (Optional Override)</label>
-                                                                                <Input
-                                                                                    placeholder={selectedApp.position}
-                                                                                    value={offerDetails.customPosition}
-                                                                                    onChange={(e) => setOfferDetails({ ...offerDetails, customPosition: e.target.value })}
-                                                                                    className="h-8 text-sm"
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {/* Action Buttons */}
-                                                                        <div className="grid grid-cols-2 gap-2">
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
-                                                                                onClick={() => generateOfferLetter(selectedApp, false)}
-                                                                            >
-                                                                                <FileText className="mr-2 h-4 w-4" /> Preview
-                                                                            </Button>
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                className="w-full border-green-200 text-green-700 hover:bg-green-50"
-                                                                                onClick={() => generateOfferLetter(selectedApp, true)}
-                                                                            >
-                                                                                <Send className="mr-2 h-4 w-4" /> Share Letter
-                                                                            </Button>
+                                                                        <div className="space-y-3">
+                                                                            <OfferEditor
+                                                                                application={selectedApp}
+                                                                                onUpdate={refreshSelectedApp}
+                                                                            />
                                                                         </div>
                                                                     </div>
                                                                 )}
@@ -1063,15 +877,25 @@ GoAI Technologies`;
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="flex justify-between items-center bg-white p-2 rounded border">
-                                                                                <span className="text-xs">Identity Docs:</span>
-                                                                                {selectedApp.onboarding[0].photo_url ? (
-                                                                                    <Button variant="link" className="h-auto p-0 text-blue-600 h-6" onClick={() => {
-                                                                                        const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/onboarding_docs/${selectedApp.onboarding[0].photo_url}`;
-                                                                                        window.open(url, '_blank');
-                                                                                    }}>View Uploads</Button>
-                                                                                ) : (
-                                                                                    <span className="text-xs text-muted-foreground">Pending</span>
+                                                                            <div className="bg-white p-2 rounded border space-y-2">
+                                                                                <div className="text-xs font-semibold px-1">Uploaded Documents:</div>
+                                                                                {['photo', 'id_proof', 'certificates'].map(docType => {
+                                                                                    const urlKey = `${docType}_url`;
+                                                                                    const url = selectedApp.onboarding[0][urlKey];
+                                                                                    if (!url) return null;
+
+                                                                                    return (
+                                                                                        <div key={docType} className="flex justify-between items-center text-sm px-1">
+                                                                                            <span className="text-muted-foreground capitalize">{docType.replace('_', ' ')}</span>
+                                                                                            <Button variant="link" className="h-auto p-0 text-blue-600 h-6" onClick={() => {
+                                                                                                const fullUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/onboarding_docs/${url}`;
+                                                                                                window.open(fullUrl, '_blank');
+                                                                                            }}>View</Button>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                                {!selectedApp.onboarding[0].photo_url && !selectedApp.onboarding[0].id_proof_url && (
+                                                                                    <div className="text-xs text-muted-foreground px-1 italic">No documents uploaded yet</div>
                                                                                 )}
                                                                             </div>
 
@@ -1256,6 +1080,48 @@ GoAI Technologies`;
                                 <Mail className="w-4 h-4 mr-2" /> Confirm & Send
                             </Button>
                         </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Created Credentials Dialog */}
+            <Dialog open={!!createdCredentials} onOpenChange={(open) => !open && setCreatedCredentials(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <CheckCircle2 className="h-6 w-6 text-green-600" />
+                            Employee Created Successfully
+                        </DialogTitle>
+                        <DialogDescription>
+                            The system account has been created and credentials sent via email.
+                            You can also copy them below.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="bg-slate-100 p-4 rounded-md space-y-2 font-mono text-sm border border-slate-200">
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">Employee Code:</span>
+                                <span>{createdCredentials?.code}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">Login ID:</span>
+                                <span>{createdCredentials?.email}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">Password:</span>
+                                <span>{createdCredentials?.password}</span>
+                            </div>
+                        </div>
+                        <Button
+                            className="w-full bg-slate-900 text-white"
+                            onClick={() => {
+                                const text = `Login ID: ${createdCredentials?.email}\nPassword: ${createdCredentials?.password}\nCode: ${createdCredentials?.code}`;
+                                navigator.clipboard.writeText(text);
+                                toast({ title: "Copied", description: "Credentials copied to clipboard" });
+                            }}
+                        >
+                            <FileText className="h-4 w-4 mr-2" /> Copy Credentials
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>

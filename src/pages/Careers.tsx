@@ -18,11 +18,9 @@ const applicationSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  linkedin_url: z.string().min(1, "LinkedIn URL is required").transform((val) => {
+  linkedin_url: z.string().optional().or(z.literal("")).transform((val) => {
     if (val && !val.startsWith("http")) return `https://${val}`;
     return val;
-  }).refine((url) => url.includes("linkedin.com"), {
-    message: "Must be a valid LinkedIn URL",
   }),
   portfolio_url: z.string().optional().or(z.literal("")).transform((val) => {
     if (val && !val.startsWith("http")) return `https://${val}`;
@@ -262,7 +260,7 @@ const Careers = () => {
 
       console.log("✅ Saved to database successfully:", savedData);
 
-      // Send email notification (Background)
+      // Send email notification to Admin (Background)
       console.log("Sending email notification...");
 
       // Fetch HR/Admin emails to include in notify message or CC
@@ -273,6 +271,7 @@ const Careers = () => {
 
       const adminEmailList = adminUsers?.map(a => a.email).join(', ') || "Hello@go-aitech.com";
 
+      // 1. Notify Admins
       fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -280,8 +279,8 @@ const Careers = () => {
           access_key: "eefdb10e-f591-4963-9a67-e45f0d8afda3",
           subject: `NEW Application: ${dbData.full_name} for ${dbData.position}`,
           from_name: "GoAi Recruitment System",
-          email: "Hello@go-aitech.com", // Keeping this as primary
-          cc: adminEmailList, // Attempting to CC all admins
+          email: "Hello@go-aitech.com",
+          cc: adminEmailList,
           message: `
 A new candidate has registered and submitted an application.
 
@@ -301,6 +300,30 @@ The following HR/Admins have been notified: ${adminEmailList}
 
 VIEW APPLICATION:
 ${window.location.origin}/hrms/recruitment
+          `.trim()
+        })
+      });
+
+      // 2. Send Acknowledgement to Candidate
+      fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_key: "eefdb10e-f591-4963-9a67-e45f0d8afda3",
+          subject: `Application Received - GoAI Technologies`,
+          from_name: "GoAI Careers",
+          email: dbData.email, // Send TO the candidate
+          message: `
+Dear ${dbData.full_name},
+
+Thank you for applying to GoAI Technologies for the position of ${dbData.position}.
+
+We have successfully received your application. Our recruitment team will review your profile and get back to you shortly if your qualifications match our requirements.
+
+Best Regards,
+Recruitment Team
+GoAI Technologies
+www.go-aitech.com
           `.trim()
         })
       });
@@ -500,7 +523,7 @@ ${window.location.origin}/hrms/recruitment
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
                       <Label htmlFor="full_name">Full Name *</Label>
-                      <Input id="full_name" name="full_name" required placeholder="Ex: Senthil Kumar" className="h-11" />
+                      <Input id="full_name" name="full_name" required placeholder="Type Your Full Name" className="h-11" />
                     </div>
 
                     <div className="space-y-2">
@@ -546,8 +569,8 @@ ${window.location.origin}/hrms/recruitment
                   {/* Social & Education */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
-                      <Label htmlFor="linkedin_url">LinkedIn Profile *</Label>
-                      <Input id="linkedin_url" name="linkedin_url" required placeholder="https://..." className="h-11" />
+                      <Label htmlFor="linkedin_url">LinkedIn Profile</Label>
+                      <Input id="linkedin_url" name="linkedin_url" placeholder="https://..." className="h-11" />
                     </div>
 
                     <div className="space-y-2">
@@ -666,7 +689,7 @@ ${window.location.origin}/hrms/recruitment
                     className="w-full h-14 text-lg shadow-xl hover:translate-y-[-2px] transition-transform"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Submitting Application..." : "Finalize & Submit Application"}
+                    {isSubmitting ? "Submitting Application..." : "Submit Application"}
                   </Button>
                 </form>
               )}
