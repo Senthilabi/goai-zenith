@@ -44,6 +44,13 @@ const Recruitment = () => {
     const [newStatus, setNewStatus] = useState("");
     const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
 
+    // Offer Letter Details State
+    const [offerDetails, setOfferDetails] = useState({
+        joiningDate: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+        internshipPeriod: 6,
+        customPosition: ''
+    });
+
     const loadImageAsBase64 = (url: string): Promise<string> => {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -120,11 +127,15 @@ const Recruitment = () => {
         doc.text(`${app.full_name}`, 20, 96);
         doc.text(`${app.university}`, 20, 102);
 
+        const position = offerDetails.customPosition || app.position;
+        const joiningDate = offerDetails.joiningDate ? format(new Date(offerDetails.joiningDate), 'PPP') : format(new Date(), 'PPP');
+        const period = offerDetails.internshipPeriod;
+
         const body = `Dear ${app.full_name},
 
-Following your recent interview for the ${app.position} Intern position, we are pleased to offer you an internship with GoAI Technologies.
+Following your recent interview for the ${position} Intern position, we are pleased to offer you an internship with GoAI Technologies.
 
-Your internship is scheduled to begin on ${format(new Date(), 'PPP')} for a duration of 6 months. During this period, you will be working remotely/hybrid as per team requirements.
+Your internship is scheduled to begin on ${joiningDate} for a duration of ${period} months. During this period, you will be working remotely/hybrid as per team requirements.
 
 Compensation & Benefits:
 • Internship Certificate and Letter of Recommendation (LOR) upon completion.
@@ -144,7 +155,71 @@ GoAI Technologies`;
         if (isFinal) {
             const pdfBlob = doc.output('blob');
             await saveDocument(app.id, null, 'offer_letter', pdfBlob, 'Offer_Letter.pdf');
-            toast({ title: "Selection Letter Issued", description: "Saved to candidate records." });
+
+            // Send email to candidate
+            try {
+                const subject = `Internship Offer Letter – ${position}`;
+                const htmlMessage = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+                        <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #10b981;">
+                            <img src="${window.location.origin}/logo.png" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
+                            <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
+                            <p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">Internship Offer Letter</p>
+                        </div>
+                        <div style="padding: 32px; color: #334155; line-height: 1.6;">
+                            <p>Dear <strong>${app.full_name}</strong>,</p>
+                            <p>Congratulations! We are pleased to offer you an internship position at <strong>GoAI Technologies</strong>.</p>
+                            
+                            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 6px; margin: 24px 0;">
+                                <h3 style="margin: 0 0 12px; color: #059669; font-size: 16px;">Offer Details</h3>
+                                <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+                                    <tr><td style="padding: 4px 0; color: #64748b; width: 140px;">Position:</td><td style="padding: 4px 0; font-weight: 600;">${position}</td></tr>
+                                    <tr><td style="padding: 4px 0; color: #64748b;">Joining Date:</td><td style="padding: 4px 0; font-weight: 600;">${joiningDate}</td></tr>
+                                    <tr><td style="padding: 4px 0; color: #64748b;">Duration:</td><td style="padding: 4px 0; font-weight: 600;">${period} Months</td></tr>
+                                    <tr><td style="padding: 4px 0; color: #64748b;">Mode:</td><td style="padding: 4px 0; font-weight: 600;">Remote/Hybrid</td></tr>
+                                </table>
+                            </div>
+
+                            <p style="margin-bottom: 24px;">Please find your official offer letter attached to this email. To proceed with onboarding, please check your email for the onboarding link.</p>
+                            
+                            <p style="margin-top: 32px; font-size: 14px;"><strong>Next Steps:</strong><br/>
+                            1. Review the attached offer letter<br/>
+                            2. Complete the onboarding process via the link sent separately<br/>
+                            3. Sign the NDA and upload required documents</p>
+                        </div>
+                        <div style="background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 12px;">
+                            <p style="margin: 0;">&copy; ${new Date().getFullYear()} GoAI Technologies Pvt Ltd</p>
+                            <p style="margin: 4px 0;">Email: hr@go-aitech.com | Website: www.go-aitech.com</p>
+                        </div>
+                    </div>
+                `;
+
+                const { error: emailError } = await supabase.rpc('send_interview_invite', {
+                    recipient_email: app.email,
+                    email_subject: subject,
+                    email_html: htmlMessage
+                });
+
+                if (emailError) {
+                    console.error("Email send error:", emailError);
+                    toast({
+                        title: "Letter Saved, Email Failed",
+                        description: "Offer letter saved but email could not be sent. Please send manually.",
+                        variant: "destructive"
+                    });
+                } else {
+                    toast({
+                        title: "Offer Letter Shared!",
+                        description: `Email sent to ${app.email} successfully.`
+                    });
+                }
+            } catch (error) {
+                console.error("Email error:", error);
+                toast({
+                    title: "Letter Saved",
+                    description: "Saved to records. Email sending failed - please send manually."
+                });
+            }
         }
 
         window.open(doc.output('bloburl'), '_blank');
@@ -907,7 +982,49 @@ GoAI Technologies`;
 
                                                                 {selectedApp.status === 'approved' && (
                                                                     <div className="border rounded-lg p-4 bg-green-50 space-y-3">
-                                                                        <h4 className="font-semibold text-sm mb-2">Issue Offer Letter</h4>
+                                                                        <h4 className="font-semibold text-sm mb-2">Offer Letter Details</h4>
+
+                                                                        {/* Offer Details Editor */}
+                                                                        <div className="space-y-3 bg-white p-3 rounded border">
+                                                                            <div className="grid grid-cols-2 gap-3">
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-xs font-medium text-muted-foreground">Joining Date</label>
+                                                                                    <Input
+                                                                                        type="date"
+                                                                                        value={offerDetails.joiningDate}
+                                                                                        onChange={(e) => setOfferDetails({ ...offerDetails, joiningDate: e.target.value })}
+                                                                                        className="h-8 text-sm"
+                                                                                    />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-xs font-medium text-muted-foreground">Period (Months)</label>
+                                                                                    <Select
+                                                                                        value={offerDetails.internshipPeriod.toString()}
+                                                                                        onValueChange={(val) => setOfferDetails({ ...offerDetails, internshipPeriod: parseInt(val) })}
+                                                                                    >
+                                                                                        <SelectTrigger className="h-8 text-sm">
+                                                                                            <SelectValue />
+                                                                                        </SelectTrigger>
+                                                                                        <SelectContent>
+                                                                                            <SelectItem value="3">3 Months</SelectItem>
+                                                                                            <SelectItem value="6">6 Months</SelectItem>
+                                                                                            <SelectItem value="12">12 Months</SelectItem>
+                                                                                        </SelectContent>
+                                                                                    </Select>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="space-y-1">
+                                                                                <label className="text-xs font-medium text-muted-foreground">Position (Optional Override)</label>
+                                                                                <Input
+                                                                                    placeholder={selectedApp.position}
+                                                                                    value={offerDetails.customPosition}
+                                                                                    onChange={(e) => setOfferDetails({ ...offerDetails, customPosition: e.target.value })}
+                                                                                    className="h-8 text-sm"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Action Buttons */}
                                                                         <div className="grid grid-cols-2 gap-2">
                                                                             <Button
                                                                                 variant="outline"
@@ -921,7 +1038,7 @@ GoAI Technologies`;
                                                                                 className="w-full border-green-200 text-green-700 hover:bg-green-50"
                                                                                 onClick={() => generateOfferLetter(selectedApp, true)}
                                                                             >
-                                                                                <Send className="mr-2 h-4 w-4" /> Issue Offer
+                                                                                <Send className="mr-2 h-4 w-4" /> Share Letter
                                                                             </Button>
                                                                         </div>
                                                                     </div>
