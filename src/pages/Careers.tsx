@@ -255,6 +255,9 @@ const Careers = () => {
 
       if (dbError) {
         console.error("❌ Database error:", dbError);
+        if (dbError.code === '23505') {
+          throw new Error(`You have already submitted an application with this email or phone number.`);
+        }
         throw new Error(`Database error: ${dbError.message}`);
       }
 
@@ -271,8 +274,8 @@ const Careers = () => {
 
       const adminEmailList = adminUsers?.map(a => a.email).join(', ') || "Hello@go-aitech.com";
 
-      // 1. Notify Admins
-      fetch("https://api.web3forms.com/submit", {
+      // 1. Notify Admins (Web3Forms is fine for this as it emails the owner)
+      await fetch("https://api.web3forms.com/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -304,28 +307,24 @@ ${window.location.origin}/hrms/recruitment
         })
       });
 
-      // 2. Send Acknowledgement to Candidate
-      fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          access_key: "eefdb10e-f591-4963-9a67-e45f0d8afda3",
-          subject: `Application Received - GoAI Technologies`,
-          from_name: "GoAI Careers",
-          email: dbData.email, // Send TO the candidate
-          message: `
-Dear ${dbData.full_name},
+      // 2. Send Acknowledgement to Candidate (Use Supabase RPC for reliable delivery)
+      const ackSubject = `Application Received - GoAI Technologies`;
+      const ackHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h2 style="color: #0f172a;">Application Received</h2>
+                <p>Dear <strong>${dbData.full_name}</strong>,</p>
+                <p>Thank you for applying to <strong>GoAI Technologies</strong> for the position of <strong>${dbData.position}</strong>.</p>
+                <p>We have successfully received your application. Our recruitment team will review your profile and get back to you shortly if your qualifications match our requirements.</p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px;">
+                    <p>Best Regards,<br>Recruitment Team<br>GoAI Technologies<br>www.go-aitech.com</p>
+                </div>
+            </div>
+      `;
 
-Thank you for applying to GoAI Technologies for the position of ${dbData.position}.
-
-We have successfully received your application. Our recruitment team will review your profile and get back to you shortly if your qualifications match our requirements.
-
-Best Regards,
-Recruitment Team
-GoAI Technologies
-www.go-aitech.com
-          `.trim()
-        })
+      await supabase.rpc('send_interview_invite', {
+        recipient_email: dbData.email,
+        email_subject: ackSubject,
+        email_html: ackHtml
       });
 
       toast({

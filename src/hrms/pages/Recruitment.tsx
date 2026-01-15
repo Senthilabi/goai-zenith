@@ -52,6 +52,9 @@ const Recruitment = () => {
         if (!selectedApp) return;
         await fetchApplications(); // Refresh list
 
+        // Also refresh documents for this app immediately
+        fetchIssuedDocs(selectedApp.id);
+
         // Refresh individual object to get new onboarding IDs etc.
         const { data: refreshedApp } = await supabase
             .from('internship_applications')
