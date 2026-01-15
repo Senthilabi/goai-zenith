@@ -57,6 +57,9 @@ const App = () => (
               <Route path="tasks" element={<TaskBoard />} />
             </Route>
 
+            {/* Onboarding Route (Isolated/Public) */}
+            <Route path="/onboarding/:id" element={<OnboardingWizard />} />
+
             {/* Main Website Routes (With Navigation/Footer) */}
             <Route path="*" element={
               <div className="flex flex-col min-h-screen">
@@ -70,9 +73,6 @@ const App = () => (
                     <Route path="/insights" element={<Insights />} />
                     <Route path="/careers" element={<Careers />} />
                     <Route path="/contact" element={<Contact />} />
-
-                    {/* Onboarding Route (Public/Token based) */}
-                    <Route path="/onboarding/:id" element={<OnboardingWizard />} />
 
                     {/* Employee Portal Routes */}
                     <Route path="/employee-login" element={<EmployeeLogin />} />

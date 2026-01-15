@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, FileText, PenTool, Home } from "lucide-react";
+import { format } from "date-fns";
 import jsPDF from "jspdf";
 
 const OnboardingWizard = () => {
@@ -137,39 +138,56 @@ const OnboardingWizard = () => {
     };
 
     // --- STEP 3: GENERATE & ACCEPT OFFER ---
-    const generateOfferLetter = () => {
+    const generateOfferLetter = async () => {
         const doc = new jsPDF();
 
-        // Header
-        doc.setFontSize(22);
-        doc.text("GoAi Technologies", 105, 20, { align: "center" });
+        // Background Letterhead
+        try {
+            const letterheadBase64 = await loadImageAsBase64("/letterhead.png");
+            doc.addImage(letterheadBase64, 'PNG', 0, 0, 210, 297);
+        } catch (e) {
+            console.error("Letterhead failed to load", e);
+            // Fallback branding
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("GOAI TECHNOLOGIES PVT LTD", 105, 25, { align: "center" });
+        }
 
-        doc.setFontSize(16);
-        doc.text("Internship Offer Letter", 105, 30, { align: "center" });
-
-        // Content
         doc.setFontSize(12);
-        doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 50);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Ref: GoAI/OFFER/${application.id.slice(0, 8)}`, 20, 50);
+        doc.text(`Date: ${format(new Date(), 'PPP')}`, 20, 57);
 
-        doc.text(`Dear ${application.full_name},`, 20, 65);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("INTERNSHIP INFORMATION & OFFER LETTER", 105, 75, { align: "center" });
 
-        const body = `We are pleased to offer you the position of ${application.position} Intern at GoAi Technologies. This is an exciting opportunity to work on cutting-edge AI and retail solutions.
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.text(`To,`, 20, 90);
+        doc.text(`${application.full_name}`, 20, 96);
+        doc.text(`${application.university}`, 20, 102);
 
-Your internship will commence effectively from today.
+        const body = `Dear ${application.full_name},
 
-Terms:
-1. Duration: 6 Months
-2. Location: Remote / Office (Hybrid)
-3. Stipend: Performance Based
+Following your recent interview for the ${application.position} Intern position, we are pleased to offer you an internship with GoAI Technologies.
 
-We look forward to welcoming you to the team.`;
+Your internship is scheduled to begin on ${format(new Date(), 'PPP')} for a duration of 6 months. During this period, you will be working remotely/hybrid as per team requirements.
+
+Compensation & Benefits:
+• Internship Certificate and Letter of Recommendation (LOR) upon completion.
+• Exposure to real-world AI and Retail Tech projects.
+
+This offer is subject to the signing of our standard Non-Disclosure Agreement (NDA).
+
+We look forward to having you join our team.
+
+Sincerely,
+HR Department
+GoAI Technologies`;
 
         const splitText = doc.splitTextToSize(body, 170);
-        doc.text(splitText, 20, 80);
-
-        doc.text("Sincerely,", 20, 150);
-        doc.text("HR Department", 20, 160);
-        doc.text("GoAi Technologies", 20, 165);
+        doc.text(splitText, 20, 115);
 
         // Open in new tab
         window.open(doc.output('bloburl'), '_blank');

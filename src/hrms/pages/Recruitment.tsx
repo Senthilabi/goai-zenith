@@ -112,7 +112,7 @@ const Recruitment = () => {
 
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.text("INTERNSHIP OFFER LETTER", 105, 75, { align: "center" });
+        doc.text("INTERNSHIP INFORMATION & OFFER LETTER", 105, 75, { align: "center" });
 
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
@@ -127,7 +127,6 @@ Following your recent interview for the ${app.position} Intern position, we are 
 Your internship is scheduled to begin on ${format(new Date(), 'PPP')} for a duration of 6 months. During this period, you will be working remotely/hybrid as per team requirements.
 
 Compensation & Benefits:
-• Performance-based stipend upon successful completion of milestones.
 • Internship Certificate and Letter of Recommendation (LOR) upon completion.
 • Exposure to real-world AI and Retail Tech projects.
 
