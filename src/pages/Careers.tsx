@@ -1,10 +1,11 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Rocket, Heart, TrendingUp, Check, Plus, X } from "lucide-react";
+import { Rocket, TrendingUp, Heart, Users, Upload, CheckCircle2, ChevronDown, Check, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -144,7 +145,7 @@ const Careers = () => {
   };
 
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAuthSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Safety check: Form should not be submittable without a user
@@ -256,7 +257,8 @@ const Careers = () => {
       if (dbError) {
         console.error("❌ Database error:", dbError);
         if (dbError.code === '23505') {
-          throw new Error(`You have already submitted an application with this email or phone number.`);
+          setDuplicateError(true);
+          return; // Exit normally, UI will switch to duplicate card
         }
         throw new Error(`Database error: ${dbError.message}`);
       }
@@ -310,13 +312,37 @@ ${window.location.origin}/hrms/recruitment
       // 2. Send Acknowledgement to Candidate (Use Supabase RPC for reliable delivery)
       const ackSubject = `Application Received - GoAI Technologies`;
       const ackHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                <h2 style="color: #0f172a;">Application Received</h2>
-                <p>Dear <strong>${dbData.full_name}</strong>,</p>
-                <p>Thank you for applying to <strong>GoAI Technologies</strong> for the position of <strong>${dbData.position}</strong>.</p>
-                <p>We have successfully received your application. Our recruitment team will review your profile and get back to you shortly if your qualifications match our requirements.</p>
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px;">
-                    <p>Best Regards,<br>Recruitment Team<br>GoAI Technologies<br>www.go-aitech.com</p>
+            <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 680px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0;">
+                    <!-- Letterhead Header -->
+                    <div style="background-color: #ffffff; padding: 20px 40px; border-bottom: 2px solid #2563eb;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td align="left" style="vertical-align: middle; width: 70%;">
+                                    <h1 style="margin: 0; color: #2563eb; font-size: 24px; font-weight: 700; line-height: 1.2;">GOAI TECHNOLOGIES</h1>
+                                    <p style="margin: 5px 0 0; color: #64748b; font-size: 10px; letter-spacing: 1px; font-weight: 600;">INNOVATION FOR RETAIL</p>
+                                </td>
+                                <td align="right" style="vertical-align: middle; width: 30%;">
+                                    <img src="https://go-aitech.com/logo.png" alt="GoAI Logo" style="height: 32px; display: block; border: 0;" />
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                <!-- Content -->
+                <div style="padding: 40px; color: #334155; line-height: 1.8; font-size: 15px;">
+                    <p style="margin-bottom: 24px;">Dear <strong>${dbData.full_name}</strong>,</p>
+                    
+                    <p>Thank you for applying to <strong>GoAI Technologies</strong> for the position of <strong>${dbData.position}</strong>.</p>
+                    
+                    <p>We have successfully received your application. Our recruitment team will review your profile and get back to you shortly if your qualifications match our requirements.</p>
+
+                    <p>We appreciate your interest in joining our team.</p>
+                </div>
+
+                <!-- Letterhead Footer -->
+                <div style="background-color: #f1f5f9; padding: 20px 40px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
+                        <p style="margin: 0; color: #2563eb;"><strong>GoAI Technologies Pvt Ltd</strong></p>
+                        <p style="margin: 5px 0 0;">Building the Future of Retail AI</p>
                 </div>
             </div>
       `;
@@ -424,13 +450,33 @@ ${window.location.origin}/hrms/recruitment
               </CardTitle>
               <CardDescription className="text-base mt-2">
                 {user
-                  ? "Tell us more about your background and passion."
-                  : "Verify your identity to proceed with the application."
-                }
+                  ? "Please verify your email using the Magic Link sent to you."
+                  : "Fill out the form below to apply for the internship."}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              {!user ? (
+              {duplicateError ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-8 text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-8 h-8 text-amber-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-amber-900">Application Previously Submitted</h3>
+                  <p className="text-amber-800 max-w-md mx-auto">
+                    We noticed that you have already submitted an application with this email or phone number.
+                  </p>
+                  <div className="pt-4  text-sm text-amber-700">
+                    <p>Our recruitment team is currently reviewing your profile.</p>
+                    <p>You will receive an update via email regarding your application status.</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="mt-6 border-amber-300 text-amber-900 hover:bg-amber-100"
+                    onClick={() => window.location.reload()}
+                  >
+                    Return to Home
+                  </Button>
+                </div>
+              ) : !user ? (
                 <div className="space-y-6 py-4">
                   {!otpSent ? (
                     <div className="max-w-md mx-auto space-y-6">

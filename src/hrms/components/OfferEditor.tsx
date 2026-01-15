@@ -82,9 +82,12 @@ export const OfferEditor = ({ application, onUpdate }: OfferEditorProps) => {
             if (!application.onboarding?.[0]) {
                 onUpdate();
             }
+
+            return onboardingId;
         } catch (error) {
             console.error("Failed to save offer details", error);
             toast({ title: "Save Failed", description: "Could not save offer details.", variant: "destructive" });
+            return null;
         } finally {
             setIsSavingOffer(false);
         }
@@ -236,7 +239,8 @@ GoAI Technologies`;
         if (!confirm(`Are you sure you want to share the offer letter with ${application.full_name}?`)) return;
 
         // Ensure details are saved first
-        await saveOfferDetails();
+        const savedOnboardingId = await saveOfferDetails();
+        if (!savedOnboardingId) return;
 
         toast({ title: "Sending Offer", description: "Generating document and sending email..." });
 
@@ -253,14 +257,14 @@ GoAI Technologies`;
                 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 680px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0;">
                     <!-- Letterhead Header -->
                     <div style="background-color: #ffffff; padding: 20px 40px; border-bottom: 2px solid #2563eb;">
-                        <table style="width: 100%;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                                <td align="left" style="vertical-align: middle;">
-                                    <h1 style="margin: 0; color: #2563eb; font-size: 24px; font-weight: 700; line-height: 1;">GOAI TECHNOLOGIES</h1>
+                                <td width="70%" align="left" style="vertical-align: middle;">
+                                    <h1 style="margin: 0; color: #2563eb; font-size: 24px; font-weight: 700; line-height: 1.2;">GOAI TECHNOLOGIES</h1>
                                     <p style="margin: 5px 0 0; color: #64748b; font-size: 10px; letter-spacing: 1px; font-weight: 600;">INNOVATION FOR RETAIL</p>
                                 </td>
-                                <td align="right" style="vertical-align: middle;">
-                                    <img src="https://go-aitech.com/logo.png" alt="GoAI Logo" style="height: 32px; display: block;" />
+                                <td width="30%" align="right" style="vertical-align: middle;">
+                                    <img src="https://go-aitech.com/logo.png" alt="GoAI Logo" style="height: 32px; display: block; border: 0;" />
                                 </td>
                             </tr>
                         </table>
@@ -314,17 +318,10 @@ GoAI Technologies`;
                 </div>
             `;
 
-            // Create onboarding record if doesn't exist (should already exist from saveOfferDetails, but double check)
-            let onboardingLink = '';
-            const { data: existingOnboarding } = await supabase
-                .from('hrms_onboarding')
-                .select('id')
-                .eq('application_id', application.id)
-                .single();
 
-            if (existingOnboarding) {
-                onboardingLink = `${window.location.origin}/onboarding/${existingOnboarding.id}`;
-            }
+
+            // Create onboarding link using the ID we just confirmed exists
+            const onboardingLink = `${window.location.origin}/onboarding/${savedOnboardingId}`;
 
             // Update email to include onboarding link
             const finalHtmlMessage = htmlMessage.replace(

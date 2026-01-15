@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { format } from "date-fns";
+import { format, addMonths, isAfter, parseISO, differenceInMonths, differenceInDays } from "date-fns";
 import { jsPDF } from "jspdf";
 import { OfferEditor } from "@/hrms/components/OfferEditor";
 
@@ -46,6 +46,15 @@ const Recruitment = () => {
     const [issuedDocs, setIssuedDocs] = useState<any[]>([]);
 
     const [createdCredentials, setCreatedCredentials] = useState<{ email: string, password: string, code: string } | null>(null);
+
+    // Certificate Dialog State
+    const [certDialog, setCertDialog] = useState<{ open: boolean, app: any | null, startDate: Date | null, endDate: string, maxDate: string }>({
+        open: false,
+        app: null,
+        startDate: null,
+        endDate: '',
+        maxDate: new Date().toISOString().split('T')[0]
+    });
 
     // Refresh selectedApp when needed (e.g. after Offer Editor updates)
     const refreshSelectedApp = async () => {
@@ -118,8 +127,49 @@ const Recruitment = () => {
         }
     };
 
-    const generateCertificate = async (app: any, isFinal: boolean = false) => {
+    const handleIssueCertClick = (app: any) => {
+        const onboarding = app.onboarding?.[0];
+        if (!onboarding || !onboarding.joining_date) {
+            toast({ title: "Error", description: "Missing joining date. Cannot issue certificate.", variant: "destructive" });
+            return;
+        }
+
+        const startDate = new Date(onboarding.joining_date);
+        const periodMonths = onboarding.internship_period_months || 6;
+        const nominalEndDate = addMonths(startDate, periodMonths);
+
+        // Default to nominal end date, but cap at Today
+        const today = new Date();
+        const defaultEndDate = isAfter(nominalEndDate, today) ? today : nominalEndDate;
+
+        setCertDialog({
+            open: true,
+            app: app,
+            startDate: startDate,
+            endDate: defaultEndDate.toISOString().split('T')[0],
+            maxDate: today.toISOString().split('T')[0]
+        });
+    };
+
+    const generateCertificate = async (app: any, isFinal: boolean, customEndDate?: string) => {
         const doc = new jsPDF({ orientation: 'landscape' });
+        const onboarding = app.onboarding?.[0];
+
+        // Date Logic
+        const startDate = new Date(onboarding.joining_date);
+        const endDate = customEndDate ? new Date(customEndDate) : new Date(); // Fallback
+
+        // Calculate dynamic duration text
+        let durationText = "";
+        const diffMonths = differenceInMonths(endDate, startDate);
+        const diffDays = differenceInDays(endDate, addMonths(startDate, diffMonths));
+
+        if (diffMonths > 0) {
+            durationText = `${diffMonths} Month${diffMonths > 1 ? 's' : ''}`;
+            if (diffDays > 15) durationText += " and " + diffDays + " Days"; // Optional precision
+        } else {
+            durationText = `${differenceInDays(endDate, startDate)} Days`;
+        }
 
         // Fancy Border
         doc.setDrawColor(20, 184, 166); // Teal-500
@@ -149,7 +199,7 @@ const Recruitment = () => {
         // Body
         doc.setFontSize(16);
         doc.setTextColor(30, 41, 59);
-        const body = `This is to certify that ${app.full_name} has successfully completed an internship with GoAI Technologies Pvt Ltd as a ${app.position || 'Intern'} for a period of 6 Months from ${format(new Date(app.created_at), 'PPP')} to ${format(new Date(), 'PPP')}.`;
+        const body = `This is to certify that ${app.full_name} has successfully completed an internship with GoAI Technologies Pvt Ltd as a ${app.position || 'Intern'} for a period of ${durationText} from ${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}.`;
         const splitBody = doc.splitTextToSize(body, 220);
         doc.text(splitBody, 148.5, 90, { align: "center" });
 
@@ -168,10 +218,9 @@ const Recruitment = () => {
             const pdfBlob = doc.output('blob');
             await saveDocument(null, app.emp_id || app.id, 'certificate', pdfBlob, 'Completion_Certificate.pdf');
             toast({ title: "Certificate Issued", description: "Successfully saved to employee records." });
-        }
-
-        window.open(doc.output('bloburl'), '_blank');
-        if (!isFinal) {
+            setCertDialog(prev => ({ ...prev, open: false })); // Close dialog
+        } else {
+            window.open(doc.output('bloburl'), '_blank');
             toast({ title: "Preview Generated", description: "Opening certificate preview..." });
         }
     };
@@ -932,10 +981,16 @@ const Recruitment = () => {
                                                                                         </Button>
                                                                                         <Button
                                                                                             className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-                                                                                            onClick={() => generateCertificate(selectedApp, true)}
+                                                                                            onClick={() => handleIssueCertClick(selectedApp)}
+                                                                                            disabled={!selectedApp.onboarding?.[0]?.joining_date || isAfter(new Date(selectedApp.onboarding[0].joining_date), new Date())}
                                                                                         >
                                                                                             <GraduationCap className="mr-2 h-4 w-4" /> Issue Cert
                                                                                         </Button>
+                                                                                        {(!selectedApp.onboarding?.[0]?.joining_date || isAfter(new Date(selectedApp.onboarding[0].joining_date), new Date())) && (
+                                                                                            <p className="text-[10px] text-amber-600 text-center">
+                                                                                                Certificate available after joining date.
+                                                                                            </p>
+                                                                                        )}
                                                                                     </div>
                                                                                 </div>
                                                                             )}
@@ -1124,6 +1179,55 @@ const Recruitment = () => {
                             }}
                         >
                             <FileText className="h-4 w-4 mr-2" /> Copy Credentials
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Certificate Confirmation Dialog */}
+            <Dialog open={certDialog.open} onOpenChange={(open) => setCertDialog(prev => ({ ...prev, open }))}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Issue Internship Certificate</DialogTitle>
+                        <DialogDescription>
+                            Confirm the internship completion details below.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Candidate</label>
+                            <div className="p-3 bg-slate-50 rounded-md text-sm border">
+                                {certDialog.app?.full_name} ({certDialog.app?.position})
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Start Date</label>
+                                <Input disabled value={certDialog.startDate ? format(certDialog.startDate, 'yyyy-MM-dd') : ''} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Completion Date</label>
+                                <Input
+                                    type="date"
+                                    max={certDialog.maxDate} // Cannot be future
+                                    value={certDialog.endDate}
+                                    onChange={(e) => setCertDialog(prev => ({ ...prev, endDate: e.target.value }))}
+                                />
+                                <p className="text-[11px] text-muted-foreground">
+                                    Determines the "Period" on the certificate. Cannot be in the future.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end">
+                        <Button variant="outline" onClick={() => generateCertificate(certDialog.app, false, certDialog.endDate)}>
+                            <Eye className="mr-2 h-4 w-4" /> Preview
+                        </Button>
+                        <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => generateCertificate(certDialog.app, true, certDialog.endDate)}>
+                            <CheckCircle2 className="mr-2 h-4 w-4" /> Confirm & Issue
                         </Button>
                     </div>
                 </DialogContent>
