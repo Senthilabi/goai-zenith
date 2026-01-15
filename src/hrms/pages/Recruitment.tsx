@@ -194,10 +194,38 @@ GoAI Technologies`;
                     </div>
                 `;
 
+                // Create onboarding record if doesn't exist
+                let onboardingLink = '';
+                const { data: existingOnboarding } = await supabase
+                    .from('hrms_onboarding')
+                    .select('id')
+                    .eq('application_id', app.id)
+                    .single();
+
+                if (existingOnboarding) {
+                    onboardingLink = `${window.location.origin}/onboarding/${existingOnboarding.id}`;
+                } else {
+                    const { data: newOnboarding } = await supabase
+                        .from('hrms_onboarding')
+                        .insert([{ application_id: app.id, personal_email: app.email }])
+                        .select('id')
+                        .single();
+                    if (newOnboarding) {
+                        onboardingLink = `${window.location.origin}/onboarding/${newOnboarding.id}`;
+                    }
+                }
+
+                // Update email to include onboarding link
+                const finalHtmlMessage = htmlMessage.replace(
+                    'Please find your official offer letter attached to this email. To proceed with onboarding, please check your email for the onboarding link.',
+                    `Please find your official offer letter details above. To proceed with onboarding, click the button below to complete your documentation and sign the NDA.<br/><br/>
+                    <a href="${onboardingLink}" style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 16px;">Complete Onboarding</a>`
+                );
+
                 const { error: emailError } = await supabase.rpc('send_interview_invite', {
                     recipient_email: app.email,
                     email_subject: subject,
-                    email_html: htmlMessage
+                    email_html: finalHtmlMessage
                 });
 
                 if (emailError) {
@@ -486,40 +514,12 @@ GoAI Technologies`;
         try {
             await updateStatus(appId, decision);
 
-            if (decision === 'approved') {
-                const subject = "Congratulations! Your Application at GoAI Technologies";
-                const htmlMessage = `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-                        <div style="background-color: #f8fafc; padding: 24px; border-bottom: 2px solid #22c55e;">
-                            <img src="${window.location.origin.includes('localhost') ? 'https://go-aitech.com/logo.png' : window.location.origin + '/logo.png'}" alt="GoAI Logo" style="height: 48px; width: auto; margin-bottom: 12px; display: block;" />
-                            <h2 style="margin: 0; color: #1e293b; font-size: 20px;">GOAI TECHNOLOGIES PVT LTD</h2>
-                            <p style="margin: 4px 0 0; color: #166534; font-size: 14px;">Selection Notification</p>
-                        </div>
-                        <div style="padding: 32px; color: #334155; line-height: 1.6;">
-                            <p>Dear Candidate,</p>
-                            <p>Congratulations! We are pleased to inform you that you have been <strong>selected</strong> for the position at <strong>GoAI Technologies</strong>.</p>
-                            <p>We were impressed with your skills and experience, and we believe you will be a valuable addition to our team.</p>
-                            <p><strong>Next Steps:</strong> Our HR team will soon initiate the onboarding process. You will receive a separate email with a link to complete your documentation and sign the NDA.</p>
-                            <p>Welcome aboard!</p>
-                        </div>
-                        <div style="background-color: #f1f5f9; padding: 20px; text-align: center; color: #64748b; font-size: 12px;">
-                            <p style="margin: 0;">&copy; ${new Date().getFullYear()} GoAI Technologies Pvt Ltd</p>
-                        </div>
-                    </div>
-                `;
-
-                await supabase.rpc('send_interview_invite', {
-                    recipient_email: email,
-                    email_subject: subject,
-                    email_html: htmlMessage
-                });
-
-                toast({
-                    title: "Candidate Approved!",
-                    description: `Approval email sent to ${email} successfully.`,
-                    duration: 6000
-                });
-            }
+            // No email sent on approval - HR will send offer letter manually via Share Letter button
+            toast({
+                title: decision === 'approved' ? "Candidate Approved!" : decision === 'on_hold' ? "Marked On Hold" : "Candidate Rejected",
+                description: decision === 'approved' ? "You can now edit and share the offer letter." : "Status updated successfully.",
+                duration: 4000
+            });
         } catch (error: any) {
             toast({ title: "Error", description: error.message, variant: "destructive" });
         }
