@@ -37,6 +37,7 @@ const applicationSchema = z.object({
 
 const Careers = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [duplicateError, setDuplicateError] = useState(false);
   const [emailAuth, setEmailAuth] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -559,7 +560,7 @@ ${window.location.origin}/hrms/recruitment
                   )}
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                <form onSubmit={handleAuthSubmit} className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
                   {/* Honeypot field - Hidden from users */}
                   <div className="hidden" aria-hidden="true">
                     <Input name="fax_number" tabIndex={-1} autoComplete="off" />
