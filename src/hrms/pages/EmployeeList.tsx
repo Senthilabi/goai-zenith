@@ -33,6 +33,30 @@ const EmployeeList = () => {
     const [selectedRole, setSelectedRole] = useState("employee");
     const [selectedDepartment, setSelectedDepartment] = useState("");
     const [selectedGender, setSelectedGender] = useState("");
+    const [nextEmpCode, setNextEmpCode] = useState("");
+
+    // Generate next sequential EMP code
+    const generateNextEmpCode = async () => {
+        try {
+            const { data: existingCodes } = await supabase
+                .from('hrms_employees')
+                .select('employee_code')
+                .like('employee_code', 'EMP%')
+                .order('employee_code', { ascending: false })
+                .limit(1);
+
+            let nextNum = 100001;
+            if (existingCodes && existingCodes.length > 0) {
+                const lastCode = existingCodes[0].employee_code;
+                const numPart = parseInt(lastCode.replace('EMP', ''), 10);
+                if (!isNaN(numPart)) nextNum = numPart + 1;
+            }
+            setNextEmpCode(`EMP${nextNum}`);
+        } catch (err) {
+            console.error('Failed to generate EMP code:', err);
+            setNextEmpCode('');
+        }
+    };
 
     useEffect(() => {
         fetchEmployees();
@@ -149,6 +173,7 @@ const EmployeeList = () => {
                             setEditingId(null);
                             setSelectedRole("employee");
                             setSelectedGender("");
+                            generateNextEmpCode();
                         }}>
                             <UserPlus className="h-4 w-4" /> Add Employee
                         </Button>
@@ -207,8 +232,8 @@ const EmployeeList = () => {
                                     <Input
                                         id="employee_code"
                                         name="employee_code"
-                                        placeholder="EMP-001"
-                                        defaultValue={currentEmployee?.employee_code || ''}
+                                        placeholder="EMP100001"
+                                        defaultValue={currentEmployee?.employee_code || nextEmpCode}
                                         required
                                     />
                                 </div>

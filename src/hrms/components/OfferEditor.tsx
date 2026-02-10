@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Check, FileText, Send, UserPlus } from "lucide-react";
+import { Loader2, Check, FileText, Send, UserPlus, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { jsPDF } from "jspdf";
 
@@ -18,6 +19,7 @@ export const OfferEditor = ({ application, onUpdate }: OfferEditorProps) => {
     const [isSavingOffer, setIsSavingOffer] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [hasShared, setHasShared] = useState(false);
+    const [isBodyOpen, setIsBodyOpen] = useState(false);
 
     // Helper for CamelCase/TitleCase
     const toTitleCase = (str: string) => {
@@ -31,15 +33,53 @@ export const OfferEditor = ({ application, onUpdate }: OfferEditorProps) => {
         customPosition: ''
     });
 
+    // Editable offer letter body
+    const [offerBody, setOfferBody] = useState('');
+
+    // Generate default template from current details
+    const generateDefaultBody = (details = offerDetails) => {
+        const position = toTitleCase(details.customPosition || application?.position || '');
+        const joiningDate = details.joiningDate ? format(new Date(details.joiningDate), 'PPP') : format(new Date(), 'PPP');
+        const period = details.internshipPeriod;
+        return `Dear ${toTitleCase(application?.full_name || '')},
+
+Following your recent interview for the ${position} Intern position, we are pleased to offer you an internship with GoAI Technologies.
+
+Your internship is scheduled to begin on ${joiningDate} for a duration of ${period} months. During this period, you will be working remotely/hybrid as per team requirements.
+
+Compensation & Benefits:
+• Internship Certificate and Letter of Recommendation (LOR) upon completion.
+• Exposure to real-world AI and Retail Tech projects.
+
+This offer is subject to the signing of our standard Non-Disclosure Agreement (NDA).
+
+We look forward to having you join our team.
+
+Sincerely,
+HR Department
+GoAI Technologies`;
+    };
+
     // Load offer details when application changes
     useEffect(() => {
         if (application?.onboarding?.[0]) {
             const ob = application.onboarding[0];
-            setOfferDetails({
+            const loadedDetails = {
                 joiningDate: ob.joining_date || format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
                 internshipPeriod: ob.internship_period_months || 6,
                 customPosition: ob.custom_position || ''
-            });
+            };
+            setOfferDetails(loadedDetails);
+
+            // Load saved body or generate default
+            if (ob.offer_body) {
+                setOfferBody(ob.offer_body);
+            } else {
+                setOfferBody(generateDefaultBody(loadedDetails));
+            }
+        } else if (application) {
+            // No onboarding record yet, use default template
+            setOfferBody(generateDefaultBody());
         }
     }, [application]);
 
@@ -64,13 +104,14 @@ export const OfferEditor = ({ application, onUpdate }: OfferEditorProps) => {
                 // but onUpdate will handle global refresh if needed.
             }
 
-            // Update details
+            // Update details (including offer body)
             const { error } = await supabase
                 .from('hrms_onboarding')
                 .update({
                     joining_date: details.joiningDate,
                     internship_period_months: details.internshipPeriod,
                     custom_position: details.customPosition,
+                    offer_body: offerBody,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', onboardingId);
@@ -143,23 +184,8 @@ export const OfferEditor = ({ application, onUpdate }: OfferEditorProps) => {
         const joiningDate = offerDetails.joiningDate ? format(new Date(offerDetails.joiningDate), 'PPP') : format(new Date(), 'PPP');
         const period = offerDetails.internshipPeriod;
 
-        const body = `Dear ${toTitleCase(application.full_name)},
-
-Following your recent interview for the ${position} Intern position, we are pleased to offer you an internship with GoAI Technologies.
-
-Your internship is scheduled to begin on ${joiningDate} for a duration of ${period} months. During this period, you will be working remotely/hybrid as per team requirements.
-
-Compensation & Benefits:
-• Internship Certificate and Letter of Recommendation (LOR) upon completion.
-• Exposure to real-world AI and Retail Tech projects.
-
-This offer is subject to the signing of our standard Non-Disclosure Agreement (NDA).
-
-We look forward to having you join our team.
-
-Sincerely,
-HR Department
-GoAI Technologies`;
+        // Use the edited body (or default if empty)
+        const body = offerBody || generateDefaultBody();
 
         const splitText = doc.splitTextToSize(body, 170);
         doc.text(splitText, 20, 115);
@@ -209,6 +235,25 @@ GoAI Technologies`;
 
     const saveDocument = async (appId: string | null, empId: string | null, docType: string, blob: Blob, fileName: string) => {
         try {
+            // Dedup: delete any existing document of this type for this candidate
+            if (appId && docType === 'offer_letter') {
+                const { data: existingDocs } = await supabase
+                    .from('hrms_documents')
+                    .select('id, file_path')
+                    .eq('candidate_id', appId)
+                    .eq('doc_type', docType);
+
+                if (existingDocs && existingDocs.length > 0) {
+                    // Delete old files from storage
+                    for (const oldDoc of existingDocs) {
+                        await supabase.storage.from('hrms_generated_docs').remove([oldDoc.file_path]);
+                    }
+                    // Delete old records from DB
+                    const oldIds = existingDocs.map(d => d.id);
+                    await supabase.from('hrms_documents').delete().in('id', oldIds);
+                }
+            }
+
             const filePath = `${empId || appId}/${Date.now()}_${fileName}`;
             const { error: uploadError } = await supabase.storage
                 .from('hrms_generated_docs')
@@ -430,6 +475,41 @@ GoAI Technologies`;
                     onBlur={() => saveOfferDetails()}
                     className="h-8 text-sm"
                 />
+            </div>
+
+            {/* Editable Letter Body */}
+            <div className="space-y-1">
+                <button
+                    type="button"
+                    className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
+                    onClick={() => setIsBodyOpen(!isBodyOpen)}
+                >
+                    <span>Edit Letter Body</span>
+                    {isBodyOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+                {isBodyOpen && (
+                    <div className="space-y-2">
+                        <Textarea
+                            value={offerBody}
+                            onChange={(e) => setOfferBody(e.target.value)}
+                            onBlur={() => saveOfferDetails()}
+                            rows={12}
+                            className="text-sm font-mono leading-relaxed"
+                            placeholder="Enter the offer letter body text..."
+                        />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                                setOfferBody(generateDefaultBody());
+                                toast({ title: "Reset", description: "Letter body reset to default template." });
+                            }}
+                        >
+                            <RotateCcw className="mr-1 h-3 w-3" /> Reset to Default
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Action Buttons */}

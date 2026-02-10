@@ -19,6 +19,10 @@ import { format, addMonths, isAfter, parseISO, differenceInMonths, differenceInD
 import { jsPDF } from "jspdf";
 import { OfferEditor } from "@/hrms/components/OfferEditor";
 
+// Forward-only status pipeline order
+const STATUS_ORDER = ['new', 'reviewing', 'shortlisted', 'interview_scheduled', 'interviewed', 'approved', 'hired'];
+const LATERAL_STATUSES = ['on_hold', 'rejected']; // allowed from any stage
+
 const Recruitment = () => {
     const { toast } = useToast();
     const { user } = useAuth();
@@ -283,7 +287,24 @@ const Recruitment = () => {
         }
     };
 
-    const updateStatus = async (id: string, status: string) => {
+    const updateStatus = async (id: string, status: string, skipGuard = false) => {
+        // Forward-only guard (unless called internally with skipGuard)
+        if (!skipGuard && selectedApp) {
+            const currentIndex = STATUS_ORDER.indexOf(selectedApp.status);
+            const newIndex = STATUS_ORDER.indexOf(status);
+
+            // If both statuses are in the pipeline and new is before current → backward move
+            if (currentIndex >= 0 && newIndex >= 0 && newIndex < currentIndex && !LATERAL_STATUSES.includes(status)) {
+                const proceed = confirm(
+                    `⚠️ This is a BACKWARD status change (${selectedApp.status} → ${status}).\n\nNo emails will be re-triggered. Are you sure you want to override?`
+                );
+                if (!proceed) {
+                    setNewStatus(selectedApp.status); // reset dropdown
+                    return;
+                }
+            }
+        }
+
         try {
             const { error } = await supabase
                 .from('internship_applications')
@@ -318,6 +339,15 @@ const Recruitment = () => {
 
     const handleSendInterviewInvite = async () => {
         if (!schedulingApp) return;
+
+        // Duplicate warning: if already at interview_scheduled or later
+        const currentIdx = STATUS_ORDER.indexOf(schedulingApp.status);
+        const scheduledIdx = STATUS_ORDER.indexOf('interview_scheduled');
+        if (currentIdx >= scheduledIdx) {
+            if (!confirm(`⚠️ Interview invite was already sent to ${schedulingApp.full_name}. Send again?`)) return;
+        } else {
+            if (!confirm(`Send interview invite email to ${schedulingApp.full_name} (${schedulingApp.email})?`)) return;
+        }
 
         try {
             // Updated Subject & Body according to user's draft
@@ -437,10 +467,17 @@ const Recruitment = () => {
     };
 
 
-    const handleStartOnboarding = async (appId: string, email: string) => {
+    const handleStartOnboarding = async (appId: string, email: string, candidateName?: string) => {
+        // Check existing first for duplicate warning
+        const { data: existing } = await supabase.from('hrms_onboarding').select('id').eq('application_id', appId).single();
+
+        if (existing) {
+            if (!confirm(`⚠️ Onboarding link was already sent to ${candidateName || email}. Resend the email?`)) return;
+        } else {
+            if (!confirm(`Send onboarding link to ${candidateName || email} (${email})?`)) return;
+        }
+
         try {
-            // Check existing
-            const { data: existing } = await supabase.from('hrms_onboarding').select('id').eq('application_id', appId).single();
 
             let onboardingId = existing?.id;
 
@@ -453,6 +490,8 @@ const Recruitment = () => {
                 if (error) throw error;
                 onboardingId = data.id;
                 toast({ title: "Started", description: "Onboarding initialized." });
+            } else {
+                onboardingId = existing.id;
             }
 
             const link = `${window.location.origin}/onboarding/${onboardingId}`;
@@ -499,11 +538,28 @@ const Recruitment = () => {
         if (!confirm(`Are you sure you want to hire ${app.full_name}? This will create their login account and send credentials to ${app.email}.`)) return;
 
         try {
-            // 1. Generate Employee Code & Login Credentials
-            const randomId = Math.floor(1000 + Math.random() * 9000);
-            const empCode = `EMP-${randomId}`;
+            // 1. Generate Sequential Intern Code (IYY1NNNNN)
+            const yearSuffix = new Date().getFullYear().toString().slice(-2); // e.g. "26"
+            const prefix = `I${yearSuffix}`; // e.g. "I26"
+
+            // Query max existing code for this prefix
+            const { data: existingCodes } = await supabase
+                .from('hrms_employees')
+                .select('employee_code')
+                .like('employee_code', `${prefix}%`)
+                .order('employee_code', { ascending: false })
+                .limit(1);
+
+            let nextNum = 100001; // default start
+            if (existingCodes && existingCodes.length > 0) {
+                const lastCode = existingCodes[0].employee_code; // e.g. "I26100003"
+                const numPart = parseInt(lastCode.replace(prefix, ''), 10);
+                if (!isNaN(numPart)) nextNum = numPart + 1;
+            }
+
+            const empCode = `${prefix}${nextNum}`; // e.g. "I26100001"
             const systemLoginId = `${empCode.toLowerCase()}@go-aitech.com`;
-            const tempPassword = `Welcome${randomId}!`;
+            const tempPassword = `Welcome${nextNum}!`;
 
             // 2. Call RPC Function to Create Auth User + Employee Record
             const { data, error } = await supabase.rpc('create_user_for_employee', {
@@ -1004,7 +1060,7 @@ const Recruitment = () => {
                                                                                 size="sm"
                                                                                 className="w-full bg-purple-600 hover:bg-purple-700"
                                                                                 disabled={!['shortlisted', 'accepted', 'approved'].includes(newStatus)}
-                                                                                onClick={() => handleStartOnboarding(selectedApp.id, selectedApp.email)}
+                                                                                onClick={() => handleStartOnboarding(selectedApp.id, selectedApp.email, selectedApp.full_name)}
                                                                             >
                                                                                 Start Onboarding
                                                                             </Button>
