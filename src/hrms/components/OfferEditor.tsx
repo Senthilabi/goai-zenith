@@ -30,7 +30,9 @@ export const OfferEditor = ({ application, onUpdate }: OfferEditorProps) => {
     const [offerDetails, setOfferDetails] = useState({
         joiningDate: format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
         internshipPeriod: 6,
-        customPosition: ''
+        customPosition: '',
+        letterType: 'internship' as 'internship' | 'project',
+        durationUnit: 'months' as 'weeks' | 'months'
     });
 
     // Editable offer letter body
@@ -41,14 +43,19 @@ export const OfferEditor = ({ application, onUpdate }: OfferEditorProps) => {
         const position = toTitleCase(details.customPosition || application?.position || '');
         const joiningDate = details.joiningDate ? format(new Date(details.joiningDate), 'PPP') : format(new Date(), 'PPP');
         const period = details.internshipPeriod;
+        const unit = details.durationUnit === 'weeks' ? 'weeks' : 'months';
+        const isProject = details.letterType === 'project';
+        const roleLabel = isProject ? 'Project Associate' : 'Intern';
+        const engagementLabel = isProject ? 'project engagement' : 'internship';
+
         return `Dear ${toTitleCase(application?.full_name || '')},
 
-Following your recent interview for the ${position} Intern position, we are pleased to offer you an internship with GoAI Technologies.
+Following your recent interview for the ${position} ${roleLabel} position, we are pleased to offer you ${isProject ? 'a project engagement' : 'an internship'} with GoAI Technologies.
 
-Your internship is scheduled to begin on ${joiningDate} for a duration of ${period} months. During this period, you will be working remotely/hybrid as per team requirements.
+Your ${engagementLabel} is scheduled to begin on ${joiningDate} for a duration of ${period} ${unit}. During this period, you will be working remotely/hybrid as per team requirements.
 
 Compensation & Benefits:
-• Internship Certificate and Letter of Recommendation (LOR) upon completion.
+• ${isProject ? 'Project Completion' : 'Internship'} Certificate and Letter of Recommendation (LOR) upon completion.
 • Exposure to real-world AI and Retail Tech projects.
 
 This offer is subject to the signing of our standard Non-Disclosure Agreement (NDA).
@@ -67,7 +74,9 @@ GoAI Technologies`;
             const loadedDetails = {
                 joiningDate: ob.joining_date || format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
                 internshipPeriod: ob.internship_period_months || 6,
-                customPosition: ob.custom_position || ''
+                customPosition: ob.custom_position || '',
+                letterType: (ob.letter_type || 'internship') as 'internship' | 'project',
+                durationUnit: (ob.duration_unit || 'months') as 'weeks' | 'months'
             };
             setOfferDetails(loadedDetails);
 
@@ -111,6 +120,8 @@ GoAI Technologies`;
                     joining_date: details.joiningDate,
                     internship_period_months: details.internshipPeriod,
                     custom_position: details.customPosition,
+                    letter_type: details.letterType,
+                    duration_unit: details.durationUnit,
                     offer_body: offerBody,
                     updated_at: new Date().toISOString()
                 })
@@ -172,7 +183,10 @@ GoAI Technologies`;
 
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.text("INTERNSHIP INFORMATION & OFFER LETTER", 105, 75, { align: "center" });
+        const pdfHeading = offerDetails.letterType === 'project'
+            ? 'PROJECT INFORMATION & OFFER LETTER'
+            : 'INTERNSHIP INFORMATION & OFFER LETTER';
+        doc.text(pdfHeading, 105, 75, { align: "center" });
 
         doc.setFontSize(11);
         doc.setFont("helvetica", "normal");
@@ -448,7 +462,7 @@ GoAI Technologies`;
                             -
                         </Button>
                         <div className="flex-1 text-center text-sm font-medium border rounded h-8 flex items-center justify-center bg-slate-50">
-                            {offerDetails.internshipPeriod} Months
+                            {offerDetails.internshipPeriod} {offerDetails.durationUnit === 'weeks' ? 'Weeks' : 'Months'}
                         </div>
                         <Button
                             variant="outline"
@@ -466,6 +480,48 @@ GoAI Technologies`;
                     </div>
                 </div>
             </div>
+            {/* Letter Type & Duration Unit */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Letter Type</label>
+                    <Select
+                        value={offerDetails.letterType}
+                        onValueChange={(val: 'internship' | 'project') => {
+                            const newDetails = { ...offerDetails, letterType: val };
+                            setOfferDetails(newDetails);
+                            saveOfferDetails(newDetails);
+                        }}
+                    >
+                        <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="internship">Internship</SelectItem>
+                            <SelectItem value="project">Project</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Duration Unit</label>
+                    <Select
+                        value={offerDetails.durationUnit}
+                        onValueChange={(val: 'weeks' | 'months') => {
+                            const newDetails = { ...offerDetails, durationUnit: val };
+                            setOfferDetails(newDetails);
+                            saveOfferDetails(newDetails);
+                        }}
+                    >
+                        <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="months">Months</SelectItem>
+                            <SelectItem value="weeks">Weeks</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
             <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Position (Optional Override)</label>
                 <Input
