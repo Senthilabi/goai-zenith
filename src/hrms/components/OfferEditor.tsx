@@ -447,7 +447,7 @@ GoAI Technologies`;
                     />
                 </div>
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Period (Months)</label>
+                    <label className="text-xs font-medium text-muted-foreground">Period</label>
                     <div className="flex items-center space-x-2">
                         <Button
                             variant="outline"
@@ -457,6 +457,7 @@ GoAI Technologies`;
                                 const newVal = Math.max(1, offerDetails.internshipPeriod - 1);
                                 const newDetails = { ...offerDetails, internshipPeriod: newVal };
                                 setOfferDetails(newDetails);
+                                setOfferBody(generateDefaultBody(newDetails));
                                 saveOfferDetails(newDetails);
                             }}
                         >
@@ -473,6 +474,7 @@ GoAI Technologies`;
                                 const newVal = offerDetails.internshipPeriod + 1;
                                 const newDetails = { ...offerDetails, internshipPeriod: newVal };
                                 setOfferDetails(newDetails);
+                                setOfferBody(generateDefaultBody(newDetails));
                                 saveOfferDetails(newDetails);
                             }}
                         >
