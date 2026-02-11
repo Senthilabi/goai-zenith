@@ -93,7 +93,7 @@ GoAI Technologies`;
         }
     }, [application]);
 
-    const saveOfferDetails = async (details = offerDetails) => {
+    const saveOfferDetails = async (details = offerDetails, bodyOverride?: string) => {
         if (!application) return;
         setIsSavingOffer(true);
         try {
@@ -123,7 +123,7 @@ GoAI Technologies`;
                     custom_position: details.customPosition,
                     letter_type: details.letterType,
                     duration_unit: details.durationUnit,
-                    offer_body: offerBody,
+                    offer_body: bodyOverride !== undefined ? bodyOverride : offerBody,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', onboardingId);
@@ -457,8 +457,9 @@ GoAI Technologies`;
                                 const newVal = Math.max(1, offerDetails.internshipPeriod - 1);
                                 const newDetails = { ...offerDetails, internshipPeriod: newVal };
                                 setOfferDetails(newDetails);
-                                setOfferBody(generateDefaultBody(newDetails));
-                                saveOfferDetails(newDetails);
+                                const newBody = generateDefaultBody(newDetails);
+                                setOfferBody(newBody);
+                                saveOfferDetails(newDetails, newBody);
                             }}
                         >
                             -
@@ -474,8 +475,9 @@ GoAI Technologies`;
                                 const newVal = offerDetails.internshipPeriod + 1;
                                 const newDetails = { ...offerDetails, internshipPeriod: newVal };
                                 setOfferDetails(newDetails);
-                                setOfferBody(generateDefaultBody(newDetails));
-                                saveOfferDetails(newDetails);
+                                const newBody = generateDefaultBody(newDetails);
+                                setOfferBody(newBody);
+                                saveOfferDetails(newDetails, newBody);
                             }}
                         >
                             +
@@ -492,8 +494,9 @@ GoAI Technologies`;
                         onValueChange={(val: 'internship' | 'project') => {
                             const newDetails = { ...offerDetails, letterType: val };
                             setOfferDetails(newDetails);
-                            setOfferBody(generateDefaultBody(newDetails));
-                            saveOfferDetails(newDetails);
+                            const newBody = generateDefaultBody(newDetails);
+                            setOfferBody(newBody);
+                            saveOfferDetails(newDetails, newBody);
                         }}
                     >
                         <SelectTrigger className="h-8 text-sm">
@@ -512,8 +515,9 @@ GoAI Technologies`;
                         onValueChange={(val: 'weeks' | 'months') => {
                             const newDetails = { ...offerDetails, durationUnit: val };
                             setOfferDetails(newDetails);
-                            setOfferBody(generateDefaultBody(newDetails));
-                            saveOfferDetails(newDetails);
+                            const newBody = generateDefaultBody(newDetails);
+                            setOfferBody(newBody);
+                            saveOfferDetails(newDetails, newBody);
                         }}
                     >
                         <SelectTrigger className="h-8 text-sm">
