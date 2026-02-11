@@ -43,7 +43,8 @@ export const OfferEditor = ({ application, onUpdate }: OfferEditorProps) => {
         const position = toTitleCase(details.customPosition || application?.position || '');
         const joiningDate = details.joiningDate ? format(new Date(details.joiningDate), 'PPP') : format(new Date(), 'PPP');
         const period = details.internshipPeriod;
-        const unit = details.durationUnit === 'weeks' ? 'weeks' : 'months';
+        const unitSingular = details.durationUnit === 'weeks' ? 'week' : 'month';
+        const unit = period === 1 ? unitSingular : `${unitSingular}s`;
         const isProject = details.letterType === 'project';
         const roleLabel = isProject ? 'Project Associate' : 'Intern';
         const engagementLabel = isProject ? 'project engagement' : 'internship';
@@ -462,7 +463,7 @@ GoAI Technologies`;
                             -
                         </Button>
                         <div className="flex-1 text-center text-sm font-medium border rounded h-8 flex items-center justify-center bg-slate-50">
-                            {offerDetails.internshipPeriod} {offerDetails.durationUnit === 'weeks' ? 'Weeks' : 'Months'}
+                            {offerDetails.internshipPeriod} {offerDetails.durationUnit === 'weeks' ? (offerDetails.internshipPeriod === 1 ? 'Week' : 'Weeks') : (offerDetails.internshipPeriod === 1 ? 'Month' : 'Months')}
                         </div>
                         <Button
                             variant="outline"
@@ -489,6 +490,7 @@ GoAI Technologies`;
                         onValueChange={(val: 'internship' | 'project') => {
                             const newDetails = { ...offerDetails, letterType: val };
                             setOfferDetails(newDetails);
+                            setOfferBody(generateDefaultBody(newDetails));
                             saveOfferDetails(newDetails);
                         }}
                     >
@@ -508,6 +510,7 @@ GoAI Technologies`;
                         onValueChange={(val: 'weeks' | 'months') => {
                             const newDetails = { ...offerDetails, durationUnit: val };
                             setOfferDetails(newDetails);
+                            setOfferBody(generateDefaultBody(newDetails));
                             saveOfferDetails(newDetails);
                         }}
                     >
